@@ -1,127 +1,108 @@
-import { readdir, readFile, stat } from 'fs/promises';
-import path from 'path';
-import { getLockMeta } from '@/lib/lock-utils';
+import { createServerClient } from '@/lib/supabase';
+import { buildSyntheticFileName, normalizeEquipment, normalizeSite } from '@/lib/note-utils';
 
-type ReleaseNoteData = {
-  site?: string;
-  equipment?: string;
-  date?: string;
-  xeaAfter?: string;
-  xesAfter?: string;
-  cimVer?: string;
-  overview?: unknown;
-  history?: unknown;
+type NoteRow = {
+  id: string;
+  site: string;
+  equipment: string;
+  date: string;
+  xea_after: string;
+  xes_after: string;
+  cim_ver: string;
+  updated_at: string;
 };
 
-function parseSiteAndEquipment(fileName: string) {
-  const name = fileName.replace('.json', '');
-  const parts = name.split('_');
-  const equipment = parts.pop() || '';
-  const site = parts.join('_');
-  return { site, equipment };
-}
+type ChildCountRow = {
+  note_id: string;
+};
 
-function safeArrayLength(value: unknown) {
-  return Array.isArray(value) ? value.length : 0;
-}
-
-function normalizeText(value: unknown) {
-  return typeof value === 'string' ? value : '';
-}
+type LockRow = {
+  site: string;
+  equipment: string;
+  user_name: string;
+  updated_at: string;
+  expires_at: string;
+};
 
 export async function GET() {
   try {
-    const dataDir = path.join(process.cwd(), 'data');
-    const files = await readdir(dataDir);
+    const supabase = createServerClient();
 
-    const jsonFiles = files.filter((file) => file.endsWith('.json'));
+    const [
+      { data: notes, error: notesError },
+      { data: overviewRows, error: overviewError },
+      { data: historyRows, error: historyError },
+      { data: locks, error: locksError },
+    ] = await Promise.all([
+      supabase
+        .from('notes')
+        .select('id, site, equipment, date, xea_after, xes_after, cim_ver, updated_at')
+        .order('updated_at', { ascending: false }),
+      supabase.from('overview_items').select('note_id'),
+      supabase.from('history_rows').select('note_id'),
+      supabase.from('edit_locks').select('site, equipment, user_name, updated_at, expires_at'),
+    ]);
 
-    const items = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const filePath = path.join(dataDir, file);
+    if (notesError) throw notesError;
+    if (overviewError) throw overviewError;
+    if (historyError) throw historyError;
+    if (locksError) throw locksError;
 
-        const { site: fallbackSite, equipment: fallbackEquipment } =
-          parseSiteAndEquipment(file);
+    const overviewCountMap = new Map<string, number>();
+    for (const row of (overviewRows || []) as ChildCountRow[]) {
+      overviewCountMap.set(row.note_id, (overviewCountMap.get(row.note_id) || 0) + 1);
+    }
 
-        let parsed: ReleaseNoteData = {};
-        let fileStat: Awaited<ReturnType<typeof stat>> | null = null;
+    const historyCountMap = new Map<string, number>();
+    for (const row of (historyRows || []) as ChildCountRow[]) {
+      historyCountMap.set(row.note_id, (historyCountMap.get(row.note_id) || 0) + 1);
+    }
 
-        try {
-          const [raw, statResult] = await Promise.all([
-            readFile(filePath, 'utf-8'),
-            stat(filePath),
-          ]);
+    const lockMap = new Map<string, LockRow>();
+    for (const lock of (locks || []) as LockRow[]) {
+      lockMap.set(`${normalizeSite(lock.site)}__${normalizeEquipment(lock.equipment)}`, lock);
+    }
 
-          parsed = JSON.parse(raw) as ReleaseNoteData;
-          fileStat = statResult;
-        } catch (readErr) {
-          console.error(`[list-notes] failed to read ${file}`, readErr);
-        }
+    const items = ((notes || []) as NoteRow[]).map((note) => {
+      const key = `${normalizeSite(note.site)}__${normalizeEquipment(note.equipment)}`;
+      const lock = lockMap.get(key);
+      const stale = lock?.expires_at ? new Date(lock.expires_at).getTime() < Date.now() : false;
+      const overviewCount = overviewCountMap.get(note.id) || 0;
+      const historyCount = historyCountMap.get(note.id) || 0;
+      const hasData =
+        overviewCount > 0 ||
+        historyCount > 0 ||
+        !!String(note.date || '').trim() ||
+        !!String(note.xea_after || '').trim() ||
+        !!String(note.xes_after || '').trim() ||
+        !!String(note.cim_ver || '').trim();
 
-        const site = normalizeText(parsed.site) || fallbackSite;
-        const equipment = normalizeText(parsed.equipment) || fallbackEquipment;
+      const status = lock ? (stale ? 'stale_lock' : 'locked') : hasData ? 'editable' : 'no_data';
 
-        const overviewCount = safeArrayLength(parsed.overview);
-        const historyCount = safeArrayLength(parsed.history);
-
-        const hasOverview = overviewCount > 0;
-        const hasHistory = historyCount > 0;
-
-        const hasData =
-          hasOverview ||
-          hasHistory ||
-          !!normalizeText(parsed.date) ||
-          !!normalizeText(parsed.xeaAfter) ||
-          !!normalizeText(parsed.xesAfter) ||
-          !!normalizeText(parsed.cimVer);
-
-        const lock = await getLockMeta(site, equipment);
-
-        const status = lock
-          ? lock.stale
-            ? 'stale_lock'
-            : 'locked'
-          : hasData
-          ? 'editable'
-          : 'no_data';
-
-        return {
-          file,
-          site,
-          equipment,
-          date: normalizeText(parsed.date),
-          xeaAfter: normalizeText(parsed.xeaAfter),
-          xesAfter: normalizeText(parsed.xesAfter),
-          cimVer: normalizeText(parsed.cimVer),
-          hasOverview,
-          hasHistory,
-          overviewCount,
-          historyCount,
-          updatedAt: fileStat?.mtime?.toISOString?.() || '',
-          status,
-          lockUser: lock?.user || '',
-          lockUpdatedAt: lock?.updatedAt || '',
-          lockStale: !!lock?.stale,
-        };
-      })
-    );
-
-    items.sort((a, b) => {
-      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      return bTime - aTime;
+      return {
+        noteId: note.id,
+        file: buildSyntheticFileName(note.site, note.equipment),
+        site: note.site,
+        equipment: note.equipment,
+        date: note.date || '',
+        xeaAfter: note.xea_after || '',
+        xesAfter: note.xes_after || '',
+        cimVer: note.cim_ver || '',
+        hasOverview: overviewCount > 0,
+        hasHistory: historyCount > 0,
+        overviewCount,
+        historyCount,
+        updatedAt: note.updated_at || '',
+        status,
+        lockUser: lock?.user_name || '',
+        lockUpdatedAt: lock?.updated_at || '',
+        lockStale: stale,
+      };
     });
 
-    return Response.json({
-      ok: true,
-      items,
-    });
+    return Response.json({ ok: true, items });
   } catch (err) {
     console.error(err);
-
-    return Response.json({
-      ok: false,
-      items: [],
-    });
+    return Response.json({ ok: false, items: [] }, { status: 500 });
   }
 }

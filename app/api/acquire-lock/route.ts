@@ -13,48 +13,26 @@ export async function POST(req: Request) {
 
     const existing = await getLockMeta(site, equipment);
 
-    // 락 없음 -> 획득
-    if (!existing) {
+    if (!existing || existing.user === user || existing.stale) {
       const lock = await writeLock(site, equipment, user);
       return Response.json({
         ok: true,
         acquired: true,
+        takenOver: !!existing?.stale && existing.user !== user,
         lock,
       });
     }
 
-    // 같은 사용자 -> 갱신
-    if (existing.user === user) {
-      const lock = await writeLock(site, equipment, user);
-      return Response.json({
-        ok: true,
-        acquired: true,
-        lock,
-      });
-    }
-
-    // stale -> takeover 허용
-    if (existing.stale) {
-      const lock = await writeLock(site, equipment, user);
-      return Response.json({
-        ok: true,
-        acquired: true,
-        lock,
-        takenOver: true,
-      });
-    }
-
-    // 다른 사용자가 점유 중
     return Response.json({
       ok: true,
       acquired: false,
-      lock: existing,
       message: '다른 사용자가 수정 중입니다.',
+      lock: existing,
     });
   } catch (err) {
-    console.error(err);
+    console.error('[acquire-lock] error', err);
     return Response.json(
-      { ok: false, message: '락 획득 실패' },
+      { ok: false, acquired: false, message: '락 획득 실패' },
       { status: 500 }
     );
   }

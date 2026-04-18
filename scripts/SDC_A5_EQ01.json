@@ -1,0 +1,116 @@
+{
+  "site": "SDC A5",
+  "date": "2026-04-16",
+  "xeaBefore": "5.2.5 Dev3287",
+  "xeaAfter": "5.2.5 Dev3592",
+  "xesBefore": "5.2.5 Dev1385",
+  "xesAfter": "5.2.5 Dev1534",
+  "cimVer": "",
+  "overview": [
+    "Z & Focus Reset 기능 추가_HW 이슈 임시조치 건"
+  ],
+  "xeaDetails": [
+    {
+      "ref": "#4199",
+      "category": "Bug Fix",
+      "title": "1Feature Align 결과 Display 개선",
+      "desc": "Fine Align 이후 저장되는 이미지의 녹색 CrossMark 기준 변경"
+    },
+    {
+      "ref": "#4197",
+      "category": "Improvement",
+      "title": "Tip Exchanger ",
+      "desc": "Tip Info Reset 시 Tip Width Y Reset 되도록 개선\nTip Char. 진행 시 X, Y or Both 선택 기능 구현\n"
+    },
+    {
+      "ref": "#4272",
+      "category": "Bug Fix",
+      "title": "Job 2개 걸림",
+      "desc": "Job View 의 Job Table UI Update 처리 개선\n"
+    },
+    {
+      "ref": "",
+      "category": "New Feature",
+      "title": "Z & Focus Reset option 추가",
+      "desc": "ATX전 Z&F Stage Reset Option 활성화 조건 변경"
+    },
+    {
+      "ref": "",
+      "category": "Improvement",
+      "title": "",
+      "desc": "Dual Unit Cal. 기능 제외"
+    }
+  ],
+  "xesDetails": [
+    {
+      "ref": "#4199",
+      "category": "Bug Fix",
+      "title": "Feature Align 이상 건",
+      "desc": "Fine Align 이후 Match Result Display 시 녹색 Cross Mark 위치 기준 변경 \nVision Center -> Tip Position"
+    },
+    {
+      "ref": "#4084",
+      "category": "Improvement",
+      "title": "XY Stage Position Invalid Interlock 확인 요청",
+      "desc": "Move 이후 Start와 Ended Position 비교 후 차이가 EncoderErrorValue 보다 클 경우 알람 발생 기능 추가\n[XYStage] : Invalid Controller Position"
+    },
+    {
+      "ref": "$4272",
+      "category": "Bug Fix",
+      "title": "Job 2개 걸림",
+      "desc": "GlassExChange Property 조회 시 SW Blocking 현상 개선"
+    }
+  ],
+  "testVersions": [],
+  "notes": [
+    {
+      "icon": "!",
+      "text": "Z & Focus Reset 기능 추가 후 Job 진행 특이사항 여부 확인"
+    },
+    {
+      "icon": "i",
+      "text": "Z & Focus Reset 기능은 Recipe/Option에서 활성화 시에만 기능합니다.\nDefault option은 비활성화 입니다."
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-04-16",
+      "xea": "5.2.5 Dev3592",
+      "xes": "5.2.5 Dev1534",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3592\n1. Feature Align 결과 Display 개선\nA. Fine Align 이후 저장되는 이미지의 녹색 CrossMark 기준 변경\n2. Tip Exchanger 버그 수정\nA. Tip Info Reset 시 Tip Width Y Reset 되도록 개선\nB. Tip Char. 진행 시 X, Y or Both 선택 기능 구현\n3. Job View UI Update 개선\n4. ATX전 Z&F Stage Reset Option 활성화 조건 변경\n5. Dual Unit Cal. 기능 제외\n\nXEService 5.2.5 Dev1534\n1. Feature Align 결과 Display 개선\nA. Fine Align 이후 저장되는 이미지의 녹색 CrossMark 기준 변경\n2. XY Position Invalid Interlock\nA. Move 이후 Start와 End Position 차이가 EncoderError보다 클 경우 Alarm 발생 기능 추가\ni. [XYStage] : Invalid Controller Position\n3. Job Start 시 SW Blocking 현상 개선\nA. Glass Exchange 사용 여부에 따라 Property 조회 수정"
+    },
+    {
+      "date": "2026-04-02",
+      "xea": "5.2.5 Dev3514",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3514\n1. Dual Unit Calibration 기능 구현\nA. Unit Calibration 용 Tip 사용을 위하여 Auto Run 시 ATX 기능 구현\nB. Single Head에서도 사용 가능하도록 기능 확장\ni. 사용 조건 개선: Tip Qual. 활성화 시 사용 가능\nii. UI 내 Dual Text 삭제\niii. Dual Unit Calibration용 Sample Type 변경\n· Dual Unit Calibration -> UnitCalibration"
+    },
+    {
+      "date": "2026-04-02",
+      "xea": "5.2.5 Dev3513",
+      "xes": "5.2.5 Dev1488",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3513\n1. Indexer Load/Unload 시 Timeout 추가\nA. XEA -> CIM 으로 Glass 반송 명령 전달 후 10분 이내 응답 없을 경우 Alarm 발생 구현\ni. Alarm ID: 90053\nii. Alarm Text: load/unload sequence failed. Indexer wait timeout\n2. Power Save Mode 기능 개선\nA. 로그 강화\nB. Sleep State 전환 조건 개선\nC. Setup UI 표시 조건 수정\ni. VMOption: SDC or LGD -> PowerSaveMode\n3. TP UI 기능 구현\nA. PSPD Panel, Vision Panel, XY Gantry, Z/F Stage, ATX, Sample Aligner Monitoring UI 구현\nB. TP 연결을 위한 Connect Button 구현\n\nXEService 5.2.5 Dev1488\n1. TP 기능 구현\nA. Jog 동작 기능 구현"
+    },
+    {
+      "date": "2026-02-04",
+      "xea": "5.2.5 Dev3287",
+      "xes": "5.2.5 Dev1385",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3287\n2. Dual Unit Calibration 기능 구현\nA. Dual Unit Calibration UI 추가\ni. Manual Action UI\nii. Setup / Measurement / Unit Calibration Option UI\nB. Dual Unit Calibration Auto/Manual Sequence 구현\n3. Tip Info X, Y 분기\nA. Tip Info Table UI 내 X, Y 구분\nB. Tip Information Exchanger Table 내 X, Y 구분\nC. ATX에서 Tip Char. Retry Sequence 개선\ni. Tip Char. X, Y 각 파라미터 설정값을 기준으로 동작하도록 개선\nD. XEI / Information UI 내 X, Y 구분\nE. 측정 이후 저장되는 Summry & Log 파일 내 Tip 정보 기입 시 X, Y 구분\n4. FDC / Tip Width X, Y 분기\nA. Tip Width 보고 시 X, Y 구분하여 보고하도록 개선\n5. PLC Viewer 기능 개선\nA. Address 표기 형식 변경 (10진수 -> 16진수)\nB. Info Panel Scroll 기능 추가\nC. 검색 기능 추가\n6. Teaching Pendent\nA. TP 사용 시 UI 비활성화\n7. Recipe 동기화 개선\nA. Recipe 최상위 폴더 내 파일들만 동기화 되도록 개선\n8. Tip Qual. Manual UI 개선\nA. Tip 변경 시 Retry Count Update 되도록 개선\n9. Clamp Sequence 변경\nA. Clamp Open 전 Air Blow Off 추가\n10. Setup View 버그 수정\nA. Single Mode 사용 시 Setup 저장 안됨 개선\n11. 편의 기능 개선\nA. Alarm View 에 Alarm Guide Button 추가\nB. F1 or Alarm Guide Button 클릭 시 Trouble Shooting Guide 함께 열리도록 개선\nC. Recipe Run 시 Debug 폴더에 Recipe 파일 저장\n\nXEService 5.2.5 Dev1385\n2. Tip Info X, Y 분기\nA. XES DB 에 Tip Width 저장/조회 시 X, Y 구분\n3. FDC / Tip Width X, Y 분기\nA. Tip Width 보고 시 X, Y 구분하여 보고하도록 개선\nB. Tip Width X VID = 608\nC. Tip Width Y VID = 612\n4. Lift Pin Down 상태에서 Job 걸렸을 때 Sample is not ready 발생 관련 수정\nA. Log 보완 및 대기시간 추가\n5. Teaching Pendent\nA. UseUsbControl 관련 기능 삭제"
+    },
+    {
+      "date": "2025-12-31",
+      "xea": "5.2.5 Dev3108",
+      "xes": "5.2.5 Dev1308",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3108\n12. PLC Viewer 기능 추가\n13. Feature Align 개선\nA. Pattern Match Result Display 시 Layout & Score 색상 변경 기능 추가\nB. Feature Align 시 Coarse/Fine Align 전·후 이미지 저장 개선\nC. Fine Align Sequence 개선 (ROI Pattern Match 및 Retry)\n14. Unit Offset 기능 추가\nA. Head 별 Adjusted Approach Offset 적용 기능 추가\n15. Tip Char. 관련 개선\nA. Recipe 에서 Tip Check 진행 시 Tip Char. X/Y/Both 선택 기능 추가\nB. Tip Char. Log에 Sweep Frequency Data 추가 (Amplitude, SetPoint, Frequency, Drive, Q)\nC. Tip Char. Log 월·일 단위 로그 파일 생성 개선\nD. 4 Line 미만 분석 안됨 개선\nE. Tip Width 계산을 위해 Process 진행 시 Filter 병렬 처리로 인한 데이터 왜곡 개선\n16. Method안정화 개선\nA. Taught Data의 Y Size가 0인 경우 Multi Line 선택 시 Ref.Scan Parameter 깨짐 개선\n17. Dual Unit 안정화 개선\nA. Setup에서 Unit 전환 시 현재 Unit이 Unloading Pos.로 이동하도록 개선\nB. XEA 시작 시 반대편 Unit Servo Off 동작 추가\n\nXEService 5.2.5 Dev1308\n6. Door Open 이후 Gantry Air Off 되지 않음 개선\nA. Emergency PLC Sequence 개선 및 Air 관련 로그 추가\n7. Sunje Ionizer 안정화 개선\nA. 수신 데이터 처리 개선\n8. Feature Align 개선\nA. ROI Pattern Match 시 ROI 영역 계산 개선\nB. ROI Pattern Match 실패 시 전체 영역에서 Pattern Match 진행 하도록 개선\nC. OCX File Log 기능 추가 및 전반적인 Log 보완"
+    }
+  ],
+  "equipmentId": "EQ01",
+  "displayName": "SDC A5 / EQ01",
+  "lastModifiedBy": "",
+  "lastModifiedTime": ""
+}

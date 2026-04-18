@@ -1,101 +1,97 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
+import { buildSyntheticFileName, normalizeEquipment, normalizeSite } from '@/lib/note-utils';
 
-function normalizeSite(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '_')
-    .toUpperCase();
-}
-
-function normalizeEquipment(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase();
+function parseLegacyFileName(fileName: string) {
+  const old = String(fileName || '').replace(/\.json$/i, '');
+  const parts = old.split('_');
+  const equipment = normalizeEquipment(parts.pop() || '');
+  const site = normalizeSite(parts.join('_'));
+  return { site, equipment };
 }
 
 export async function POST(req: Request) {
   try {
-    const { oldFileName, newSite, newEquipment } = await req.json();
+    const { noteId, oldFileName, oldSite, oldEquipment, newSite, newEquipment } = await req.json();
 
     const site = normalizeSite(newSite);
     const equipment = normalizeEquipment(newEquipment);
-
-    if (!oldFileName || !site || !equipment) {
-      return NextResponse.json({
-        ok: false,
-        message: '필수 값 누락',
-      });
+    if (!site || !equipment) {
+      return NextResponse.json({ ok: false, message: '필수 값 누락' }, { status: 400 });
     }
 
-    const dataDir = path.join(process.cwd(), 'data');
+    const supabase = createServerClient();
 
-    const oldFile = path.join(dataDir, oldFileName);
-    const newFileName = `${site}_${equipment}.json`;
-    const newFile = path.join(dataDir, newFileName);
+    let targetId = noteId as string | undefined;
+    let previousSite = normalizeSite(oldSite || '');
+    let previousEquipment = normalizeEquipment(oldEquipment || '');
 
-    if (!fs.existsSync(oldFile)) {
-      return NextResponse.json({
-        ok: false,
-        message: `기존 파일 없음: ${oldFileName}`,
-      });
+    if (!targetId) {
+      if ((!previousSite || !previousEquipment) && oldFileName) {
+        const parsed = parseLegacyFileName(oldFileName);
+        previousSite = parsed.site;
+        previousEquipment = parsed.equipment;
+      }
+
+      const { data: current, error: currentError } = await supabase
+        .from('notes')
+        .select('id, site, equipment')
+        .eq('site', previousSite)
+        .eq('equipment', previousEquipment)
+        .maybeSingle();
+      if (currentError) throw currentError;
+      if (!current) {
+        return NextResponse.json({ ok: false, message: '기존 카드를 찾을 수 없습니다.' }, { status: 404 });
+      }
+      targetId = current.id;
+      previousSite = current.site;
+      previousEquipment = current.equipment;
+    } else {
+      const { data: current, error: currentError } = await supabase
+        .from('notes')
+        .select('site, equipment')
+        .eq('id', targetId)
+        .single();
+      if (currentError) throw currentError;
+      previousSite = current.site;
+      previousEquipment = current.equipment;
     }
 
-    if (fs.existsSync(newFile) && oldFileName !== newFileName) {
-      return NextResponse.json({
-        ok: false,
-        message: '이미 존재하는 카드입니다.',
-      });
+    const { data: duplicate, error: duplicateError } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('site', site)
+      .eq('equipment', equipment)
+      .neq('id', targetId)
+      .maybeSingle();
+    if (duplicateError) throw duplicateError;
+    if (duplicate) {
+      return NextResponse.json({ ok: false, message: '이미 존재하는 카드입니다.' }, { status: 409 });
     }
 
-    // 기존 내용 읽기
-    const raw = fs.readFileSync(oldFile, 'utf-8');
-    const json = JSON.parse(raw);
+    const { error: updateNoteError } = await supabase
+      .from('notes')
+      .update({ site, equipment })
+      .eq('id', targetId);
+    if (updateNoteError) throw updateNoteError;
 
-    // 내부 site/equipment도 같이 갱신
-    json.site = site;
-    json.equipment = equipment;
-
-    // 같은 이름이면 내용만 갱신
-    if (oldFileName === newFileName) {
-      fs.writeFileSync(oldFile, JSON.stringify(json, null, 2), 'utf-8');
-
-      return NextResponse.json({
-        ok: true,
-        message: '카드 정보가 수정되었습니다.',
-        file: newFileName,
-      });
-    }
-
-    // 새 파일명으로 저장 후 기존 파일 삭제
-    fs.writeFileSync(newFile, JSON.stringify(json, null, 2), 'utf-8');
-    fs.unlinkSync(oldFile);
-
-    // lock 파일도 이름 변경
-    const lockDir = path.join(dataDir, '_locks');
-
-    const oldLockName = oldFileName.replace(/\.json$/i, '.lock');
-    const newLockName = newFileName.replace(/\.json$/i, '.lock');
-
-    const oldLock = path.join(lockDir, oldLockName);
-    const newLock = path.join(lockDir, newLockName);
-
-    if (fs.existsSync(oldLock)) {
-      fs.renameSync(oldLock, newLock);
-    }
+    const { error: updateLockError } = await supabase
+      .from('edit_locks')
+      .update({ site, equipment })
+      .eq('site', previousSite)
+      .eq('equipment', previousEquipment);
+    if (updateLockError) throw updateLockError;
 
     return NextResponse.json({
       ok: true,
       message: '카드 이름이 변경되었습니다.',
-      file: newFileName,
+      file: buildSyntheticFileName(site, equipment),
+      site,
+      equipment,
+      noteId: targetId,
     });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({
-      ok: false,
-      message: '서버 에러',
-    });
+    console.error('[rename-note]', err);
+    return NextResponse.json({ ok: false, message: '서버 에러' }, { status: 500 });
   }
 }

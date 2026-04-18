@@ -1,49 +1,62 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
+import { normalizeEquipment, normalizeSite } from '@/lib/note-utils';
+
+function parseLegacyFileName(fileName: string) {
+  const old = String(fileName || '').replace(/\.json$/i, '');
+  const parts = old.split('_');
+  const equipment = normalizeEquipment(parts.pop() || '');
+  const site = normalizeSite(parts.join('_'));
+  return { site, equipment };
+}
 
 export async function POST(req: Request) {
   try {
-    const { fileName } = await req.json();
+    const { noteId, site: rawSite, equipment: rawEquipment, fileName } = await req.json();
+    const supabase = createServerClient();
 
-    if (!fileName) {
-      return NextResponse.json({
-        ok: false,
-        message: 'fileName 없음',
-      });
+    if (noteId) {
+      const { error: deleteLockError } = await supabase
+        .from('edit_locks')
+        .delete()
+        .eq('site', normalizeSite(rawSite || ''))
+        .eq('equipment', normalizeEquipment(rawEquipment || ''));
+      if (deleteLockError) throw deleteLockError;
+
+      const { error: deleteNoteError } = await supabase.from('notes').delete().eq('id', noteId);
+      if (deleteNoteError) throw deleteNoteError;
+      return NextResponse.json({ ok: true, message: '삭제 완료' });
     }
 
-    const dataDir = path.join(process.cwd(), 'data');
-    const filePath = path.join(dataDir, fileName);
-
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json({
-        ok: false,
-        message: '파일 없음',
-      });
+    let site = normalizeSite(rawSite || '');
+    let equipment = normalizeEquipment(rawEquipment || '');
+    if ((!site || !equipment) && fileName) {
+      const parsed = parseLegacyFileName(fileName);
+      site = parsed.site;
+      equipment = parsed.equipment;
     }
 
-    // 1. JSON 삭제
-    fs.unlinkSync(filePath);
-
-    // 2. lock 삭제
-    const lockDir = path.join(dataDir, '_locks');
-    const lockName = fileName.replace(/\.json$/i, '.lock');
-    const lockPath = path.join(lockDir, lockName);
-
-    if (fs.existsSync(lockPath)) {
-      fs.unlinkSync(lockPath);
+    if (!site || !equipment) {
+      return NextResponse.json({ ok: false, message: '삭제 대상 식별값이 없습니다.' }, { status: 400 });
     }
 
-    return NextResponse.json({
-      ok: true,
-      message: '삭제 완료',
-    });
+    const { error: deleteLockError } = await supabase
+      .from('edit_locks')
+      .delete()
+      .eq('site', site)
+      .eq('equipment', equipment);
+    if (deleteLockError) throw deleteLockError;
+
+    const { error: deleteNoteError } = await supabase
+      .from('notes')
+      .delete()
+      .eq('site', site)
+      .eq('equipment', equipment);
+    if (deleteNoteError) throw deleteNoteError;
+
+    return NextResponse.json({ ok: true, message: '삭제 완료' });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({
-      ok: false,
-      message: '서버 에러',
-    });
+    console.error('[delete-note]', err);
+    return NextResponse.json({ ok: false, message: '서버 에러' }, { status: 500 });
   }
 }

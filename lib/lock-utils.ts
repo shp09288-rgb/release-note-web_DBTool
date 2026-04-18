@@ -1,5 +1,4 @@
-import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
 
 export type LockInfo = {
   site: string;
@@ -7,84 +6,112 @@ export type LockInfo = {
   user: string;
   createdAt: string;
   updatedAt: string;
+  expiresAt: string;
+  stale: boolean;
+  mtime: string;
 };
 
-export const LOCK_STALE_MS = 1000 * 60 * 60 * 10; // 10분
+export const LOCK_STALE_MS = 1000 * 60 * 60 * 10; // 10 hours
 
-function safeName(value: string) {
-  return String(value || '').replace(/[^\w\-]/g, '_');
+function normalizeKey(value: string) {
+  return String(value || '').trim();
 }
 
-export function getLockDir() {
-  return path.join(process.cwd(), 'data', '_locks');
+function nowIso() {
+  return new Date().toISOString();
 }
 
-export function getLockFilePath(site: string, equipment: string) {
-  const siteKey = safeName(site);
-  const eqKey = safeName(equipment);
-  return path.join(getLockDir(), `${siteKey}__${eqKey}.lock.json`);
+function computeExpiry(base = Date.now()) {
+  return new Date(base + LOCK_STALE_MS).toISOString();
 }
 
-export async function ensureLockDir() {
-  await mkdir(getLockDir(), { recursive: true });
+function mapRow(row: any): LockInfo {
+  const updatedAt = row?.updated_at || row?.locked_at || row?.created_at || nowIso();
+  const expiresAt = row?.expires_at || computeExpiry(new Date(updatedAt).getTime());
+  const stale = new Date(expiresAt).getTime() <= Date.now();
+
+  return {
+    site: row?.site || '',
+    equipment: row?.equipment || '',
+    user: row?.user_name || '',
+    createdAt: row?.created_at || updatedAt,
+    updatedAt,
+    expiresAt,
+    stale,
+    mtime: updatedAt,
+  };
 }
 
 export async function readLock(site: string, equipment: string): Promise<LockInfo | null> {
-  try {
-    const filePath = getLockFilePath(site, equipment);
-    const raw = await readFile(filePath, 'utf-8');
-    return JSON.parse(raw) as LockInfo;
-  } catch {
-    return null;
-  }
+  return getLockMeta(site, equipment);
 }
 
-export async function getLockMeta(site: string, equipment: string) {
-  const filePath = getLockFilePath(site, equipment);
+export async function getLockMeta(site: string, equipment: string): Promise<LockInfo | null> {
+  const supabase = createServerClient();
+  const siteKey = normalizeKey(site);
+  const equipmentKey = normalizeKey(equipment);
 
-  try {
-    const lock = await readLock(site, equipment);
-    if (!lock) return null;
+  const { data, error } = await supabase
+    .from('edit_locks')
+    .select('*')
+    .eq('site', siteKey)
+    .eq('equipment', equipmentKey)
+    .maybeSingle();
 
-    const fileStat = await stat(filePath);
-    const age = Date.now() - fileStat.mtime.getTime();
-    const stale = age > LOCK_STALE_MS;
-
-    return {
-      ...lock,
-      stale,
-      mtime: fileStat.mtime.toISOString(),
-    };
-  } catch {
-    return null;
+  if (error) {
+    console.error('[lock-utils:getLockMeta] error', error);
+    throw new Error(error.message);
   }
+
+  return data ? mapRow(data) : null;
 }
 
-export async function writeLock(site: string, equipment: string, user: string) {
-  await ensureLockDir();
+export async function writeLock(site: string, equipment: string, user: string): Promise<LockInfo> {
+  const supabase = createServerClient();
+  const siteKey = normalizeKey(site);
+  const equipmentKey = normalizeKey(equipment);
+  const userName = normalizeKey(user);
+  const current = await getLockMeta(siteKey, equipmentKey);
+  const timestamp = nowIso();
+  const expiresAt = computeExpiry();
 
-  const now = new Date().toISOString();
-  const existing = await readLock(site, equipment);
-
-  const payload: LockInfo = {
-    site,
-    equipment,
-    user,
-    createdAt: existing?.createdAt || now,
-    updatedAt: now,
+  const payload = {
+    site: siteKey,
+    equipment: equipmentKey,
+    user_name: userName,
+    locked_at: current?.createdAt || timestamp,
+    created_at: current?.createdAt || timestamp,
+    updated_at: timestamp,
+    expires_at: expiresAt,
   };
 
-  const filePath = getLockFilePath(site, equipment);
-  await writeFile(filePath, JSON.stringify(payload, null, 2), 'utf-8');
+  const { data, error } = await supabase
+    .from('edit_locks')
+    .upsert(payload, { onConflict: 'site,equipment' })
+    .select('*')
+    .single();
 
-  return payload;
+  if (error) {
+    console.error('[lock-utils:writeLock] error', error);
+    throw new Error(error.message);
+  }
+
+  return mapRow(data);
 }
 
 export async function removeLock(site: string, equipment: string) {
-  try {
-    const filePath = getLockFilePath(site, equipment);
-    await rm(filePath, { force: true });
-  } catch {
-    // ignore
+  const supabase = createServerClient();
+  const siteKey = normalizeKey(site);
+  const equipmentKey = normalizeKey(equipment);
+
+  const { error } = await supabase
+    .from('edit_locks')
+    .delete()
+    .eq('site', siteKey)
+    .eq('equipment', equipmentKey);
+
+  if (error) {
+    console.error('[lock-utils:removeLock] error', error);
+    throw new Error(error.message);
   }
 }

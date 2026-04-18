@@ -244,11 +244,17 @@ useEffect(() => {
     try {
       const res = await fetch('/api/test-save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-name': currentUser || 'Anonymous',
+        },
         body: JSON.stringify(payload),
       });
 
       const result = await res.json();
+      if (!result.ok) {
+        throw new Error(result.message || '저장 실패');
+      }
       alert(`저장 완료`);
       setIsDirty(false);
     } catch (err) {
@@ -418,8 +424,8 @@ const handleNewDocument = () => {
     setOverview((prev) => {
       const next = prev.filter((_, i) => i !== index);
       return next.length > 0 ? next : [''];
-      setIsDirty(true);
     });
+    setIsDirty(true);
   };
 
   const addDetailRow = (

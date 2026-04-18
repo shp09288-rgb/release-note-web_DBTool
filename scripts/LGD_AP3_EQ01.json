@@ -1,0 +1,181 @@
+{
+  "site": "LGD AP3",
+  "date": "2026-04-14",
+  "xeaBefore": "",
+  "xeaAfter": "",
+  "xesBefore": "",
+  "xesAfter": "",
+  "cimVer": "",
+  "overview": [],
+  "xeaDetails": [],
+  "xesDetails": [],
+  "testVersions": [],
+  "notes": [],
+  "history": [
+    {
+      "date": "2026-04-14",
+      "xea": "(Dev3493 -> Dev3581)",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA (Dev3493 -> Dev3581)\nPMS #4254 PM Mode 전환 후 Stage 구동 시 반응 없음\nPMS #4199 Feature Align 이상 건\nPMS #4197 Tip Exchanger / Tip Char Option X, Y, Both 선택 구현 요청\nPMS #4045 Detector Cal Sequence 변경\nPoint 측정 시 (ImagePointProcessJob), ATX (Tip Charaterize) 에서 XY Detector Calibration 진행 후 TIp Align 진행되도록 개선\nImagePointProcessJob & TipCharacterizationProcessJob Sequence 변경\nAs-Is\n... -> Positioning -> ... -> Detector Cal. -> Tip Align -> ..."
+    },
+    {
+      "date": "2026-04-10",
+      "xea": "(Dev3493 -> Dev3549)",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA (Dev3493 -> Dev3549)\nPMS #4254 PM Mode 전환 후 Stage 구동 시 반응 없음\n원인 분석을 위한 로그 강화\nJob 실행 시 예외처리 강화\nPMS #4199 Feature Align 이상 건\nTip Exchanger / Tip Info Reset 시 Tip Width Y Reset 추가\nFine Align 이후 Match Result Display 시 녹색 Cross Mark 위치 기준 변경\nPMS #4197 Tip Exchanger / Tip Char Option X, Y, Both 선택 구현 요청\nSetup / Tip Characterizer == Use, Both 사용 시 Tip Exchanger에서 X, Y, Both 선택 기능 구현"
+    },
+    {
+      "date": "2026-04-10",
+      "xea": "(Dev3493 -> Dev3550)",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA (Dev3493 -> Dev3550)\nPMS #1961 Display / Analysis Unit Change 개발"
+    },
+    {
+      "date": "2026-04-10",
+      "xea": "-",
+      "xes": "(Dev1476 -> Dev1507)",
+      "cim": "-",
+      "summary": "XES (Dev1476 -> Dev1507)\nPMS #4199 Feature Align 이상 건\nFine Align 이후 Match Result Display 시 녹색 Cross Mark 위치 기준 변경\nVision Center -> Tip Position\nPMS #4084 XY Stage Position Invalid Interlock 확인 요청\nMove 이후 Start와 Ended Position 비교 후 차이가 EncoderErrorValue 보다 클 경우 알람 발생 기능 추가\n[XYStage] : Invalid Controller Position\nPMS #4261 정전기 관련\n정전기 값 변환 버그 수정"
+    },
+    {
+      "date": "2026-04-03",
+      "xea": "(Dev3517 -> Dev3516)",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA (Dev3517 -> Dev3516)\nPMS #4195 Single Head Calibration 기능 구현\nSingle Head에서도 사용할 수 있도록 Dual Unit Calibration 기능 확장"
+    },
+    {
+      "date": "2026-04-03",
+      "xea": "(Dev3493 -> Dev3517)",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA (Dev3493 -> Dev3517)\nPMS #4254 PM Mode 전환 후 Stage 구동 시 반응 없음\n원인 분석을 위한 로그 강화\nJob 실행 시 예외처리 강화\n요청 사항\nPMS #4254 PM Mode 전환 후 Stage 구동 시 반응 없음\n현상 재현되는지 확인 필요\n테스트 시 현상 재현되거나, 재현되지 않는 모든 경우 포함하여 로그 백업"
+    },
+    {
+      "date": "2026-03-23",
+      "xea": "(Dev3390 -> Dev3493) XES  (Dev1417 -> Dev1476)",
+      "xes": "(Dev1417 -> Dev1476)",
+      "cim": "-",
+      "summary": "XEA (Dev3390 -> Dev3493) XES  (Dev1417 -> Dev1476)\nPMS #4198 Power Save Mode State 변경 안됨\nPMS #4100 TP UI 구현\nTP Connect Button 추가\n자세한 내용은 첨부파일 참고 바랍니다\npms #3822 TP 구현\n반영 내역\npms #3822 TP 구현\n제외 내역\nPMS #1961 Display / Analysis Unit Change 개발"
+    },
+    {
+      "date": "2026-03-17",
+      "xea": "5.2.5 Dev3453",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Test SW] XEA 5.2.5 Dev3453\n반영 내역\nPMS #4100 TP UI 구현 개발 요청\nTeaching Pendant UI 구현\n자세한 내용은 첨부파일 참고"
+    },
+    {
+      "date": "2026-03-16",
+      "xea": "-",
+      "xes": "5.2.5 Dev1453",
+      "cim": "-",
+      "summary": "[Test SW] XES 5.2.5 Dev1453\nPMS #3999 ionizer 시퀀스 개선사항 확인 관련 로그 강화"
+    },
+    {
+      "date": "2026-03-12",
+      "xea": "5.2.5 Dev3441",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Power Save Mode State + Unit Change SW] XEA 5.2.5 Dev3441\nPMS #1961 Display / Analysis Unit Change 개발\nMethod Option에서 Unit Change On/Off 안되는 버그 수정\nHeight Channel에서만 동작하도록 개선\\\nPMS #4198 Power Save Mode State 변경 안됨\n원인 분석 결과 Don't Use 설정으로 확인했으나, 추가 개선 사항이 있어 개선 진행\nRunning State 변경 Log 보완 / Scheduler 예약&취소, Running State 변경 시 로깅\nSleepe State 변경 조건 수정\nSetup UI 내 표시되는 Power Save Mode UI 표시/미표시 조건 수정 / VMOption SDC or LGD -> PowerSaveMode"
+    },
+    {
+      "date": "2026-02-27",
+      "xea": "5.2.5 Dev3396",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Indexer Load/Unload Timeout + Unit Change SW] XEA 5.2.5 Dev3396\nPMS #1961 Display / Analysis Unit Change 개발\nSetup / Analysis Unit Change Option & Recipe / Options / Use Unit Change Option 추가\nAnalysis 별 Unit Change 항목들\nUniversal Line & Multi Line"
+    },
+    {
+      "date": "2026-02-27",
+      "xea": "5.2.5 Dev3390",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Indexer Load/Unload Timeout Test SW] XEA 5.2.5 Dev3390\nPMS #4074 Indexer Load/Unload 시 Timeout 추가\nTimeout: 10 min. (고정값)\nAlarm ID: 90053\nAlarm Text: load/unload sequence failed. Indexer wait timeout"
+    },
+    {
+      "date": "2026-02-26",
+      "xea": "5.2.5 Dev3390",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Indexer Load/Unload Timeout Test SW] XEA 5.2.5 Dev3390\nPMS #4074 Indexer Load/Unload 시 Timeout 추가\nTimeout: 10 min. (고정값)\nAlarm ID: 90053\nAlarm Text: load/unload sequence failed. Indexer wait timeout"
+    },
+    {
+      "date": "2026-02-26",
+      "xea": "5.2.5 Dev3389 XES 5.2.5 Dev1417",
+      "xes": "5.2.5 Dev1417",
+      "cim": "-",
+      "summary": "[Update SW] XEA 5.2.5 Dev3389 XES 5.2.5 Dev1417\nPMS #4131 Vertex Point 2개 설정 시 3개 분석됨\n모니터링 로그 보완\nPMS #4001 Sample Align / Pattern Teaching 시 광량 저장 안됨\nVision Error 발생 시 로그 추가\nPMS #4001 Sample Align / Pattern Teaching 시 광량 저장 안됨\nOCX / Illumination Parameter 저장&조회 로그 보완"
+    },
+    {
+      "date": "2026-02-13",
+      "xea": "5.2.5 3337",
+      "xes": "5.2.5 Dev1396",
+      "cim": "-",
+      "summary": "[CIM 통신 안정화 SW] XEA 5.2.5 3337 / XES 5.2.5 Dev1396\nJob Run 시 측정 폴더 내 Debug 폴더에 Recipe 저장 기능 추가\nPMS #2036 FDC / Tip Width X, Y 분기\nTip Width X, Y 분기 적용\nTip Width X VID: 608, Tip Width Y VID: 612 (신규 VID)\nPMS #3250 Tip Info의 Tip Width X, Y 구분 표기 요청\nTIp Info 내 TIp Width X, Y 구분 적용\n자세한 사항은 첨부파일 참조 바랍니다\nPMS #2036 FDC / Tip Width X, Y 분기"
+    },
+    {
+      "date": "2026-02-13",
+      "xea": "-",
+      "xes": "5.2.5 Dev1397",
+      "cim": "-",
+      "summary": "[CIM 통신 안정화 + Pressure Alarm SW] XES 5.2.5 Dev1397\nPMS #3807 Pressure Alarm 분기 요청\nX, Y, Clamp Air Up Invalid Alarm 구현\nSol On State와 Air Up State가 맞지 않는 경우 Alarm 발생"
+    },
+    {
+      "date": "2026-02-02",
+      "xea": "5.2.5 3271",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Update] XEA 5.2.5 3271\nPMS #4000 Setup 설정 원복 현상\nSetup/Tip View의 Unit Offset 값을 읽지 못하여 정상적으로 저장되지 못하던 문제 개선"
+    },
+    {
+      "date": "2026-02-02",
+      "xea": "5.2.5 Dev3272",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Test] XEA 5.2.5 Dev3272\nUpdate 버전 내용 포함\nPMS #3546 장비 IDLE 상태일 때 FFU Fan Speed 낮추는 기능\n첨부파일: 2026-01-16 [Display] Power Saving Mode.pptx\nPower Saving Mode 구현\nVMOption\n-Dcom.psia.xea.PowerSaveMode\n자세한 내용은 첨부파일 확인 바랍니다"
+    },
+    {
+      "date": "2026-01-26",
+      "xea": "5.2.5 Dev3213",
+      "xes": "5.2.5 Dev1364",
+      "cim": "-",
+      "summary": "[Update] XEA 5.2.5 Dev3213 / XES 5.2.5 Dev1364\nPMS #2897 Trouble Shooting Guide 문서 추가 및 Alarm Guide Button 추가 요청건\nAlarm View / Alarm Guide Button 추가\nManual Open Hot Key (F1) 동작 시 Trouble Shooting Guide 함께 열리도록 추가\nXEA installer에 Trouble Shooting Guide rev08 추가\nPMS #3438Tip Qual. Retry Count 0으로 설정되어 있으나 Retry 진행함\nTip Check UI 의 Tip Qualification Panel에 Retry Count Update 버그 수정\nPMS #3734 Recipe 동기화 개선 요청건\nRecipe 폴더의 최상위 폴더에 포함된 Recipe 파일만 동기화 하도록 개선"
+    },
+    {
+      "date": "2026-01-26",
+      "xea": "5.2.5 Dev3214",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Test] XEA 5.2.5 Dev3214\nUpdate 버전 내용 포함\nPMS #3546 장비 IDLE 상태일 때 FFU Fan Speed 낮추는 기능\n첨부파일: 2026-01-16 [Display] Power Saving Mode.pptx\nPower Saving Mode 구현\nVMOption\ncom.psia.xea.PowerSaveMode\n자세한 내용은 첨부파일 확인 바랍니다"
+    },
+    {
+      "date": "2026-01-13",
+      "xea": "5.2.5 Dev3148",
+      "xes": "5.2.5 Dev1336",
+      "cim": "-",
+      "summary": "[Update] XEA 5.2.5 Dev3148 / XES 5.2.5 Dev1336\nPMS #3798 PLC Monitor 구현 요청\n목록 Scroll & 검색 기능 추가\nPLC Monitoring DB 폴더명 수정\nPLC Moitoring DB -> PLC Monitoring DB\nPMS #3738 Lift Pin Down 에서 Job 걸렸을 때 Sample is not ready 발생\nLog 보완 및 대기 시간 추가"
+    },
+    {
+      "date": "2026-01-13",
+      "xea": "-",
+      "xes": "5.2.5 Dev1337",
+      "cim": "-",
+      "summary": "[Test] XES 5.2.5 Dev1337\nUpdate 버전 내용 포함\nPMS #3807 Pressure Alarm 분기 요청\nX, Y, Clamp Air Up Invalid Alarm 구현\nSol On State와 Air Up State가 맞지 않는 경우 Alarm 발생"
+    },
+    {
+      "date": "2026-01-05",
+      "xea": "5.2.5 Dev3117",
+      "xes": "5.2.5 Dev1314",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3117 / XES 5.2.5 Dev1314\nPMS #3733 Tip Char. 4 Line 미만 분석되지 않음\n버그 수정\nPMS #3797 동일한 Raw로 Tip Width 계산 시 Width 값이 변함\nFilter 병렬 처리로 인한 Data 왜곡 개선\nPMS #3630 Y Scan Dir. & Multi Line 사용 시 Recipe 깨짐\nTaught image의 X or Y Size가 0인 경우 Multi Line 사용시 Ref.Scan Line Scan Parameter 깨짐 현상 개선\nPMS #3798 PLC Monitor 구현 요청\n첨부파일: PLC Moitoring DB.zip"
+    }
+  ],
+  "equipmentId": "EQ01",
+  "displayName": "LGD AP3 / EQ01",
+  "lastModifiedBy": "",
+  "lastModifiedTime": ""
+}

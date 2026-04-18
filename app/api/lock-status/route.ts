@@ -16,9 +16,13 @@ export async function POST(req: Request) {
     return Response.json({
       ok: true,
       lock,
+      locked: !!lock && !lock.stale,
+      stale: !!lock?.stale,
+      lockedBy: lock?.user || '',
+      expiresAt: lock?.expiresAt || '',
     });
   } catch (err) {
-    console.error(err);
+    console.error('[lock-status] error', err);
     return Response.json(
       { ok: false, message: '락 조회 실패' },
       { status: 500 }
