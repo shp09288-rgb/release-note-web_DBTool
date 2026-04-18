@@ -208,6 +208,146 @@ CREATE INDEX IF NOT EXISTS idx_edit_locks_expires_at
   ON edit_locks (expires_at ASC);
 
 -- ============================================================
+-- save_note — 단일 트랜잭션으로 노트 전체 저장
+--
+-- PL/pgSQL 함수 내 모든 문장은 하나의 트랜잭션으로 실행됨.
+-- 중간 실패 시 Postgres가 전체 롤백 → 데이터 불일치 방지.
+--
+-- Supabase SQL Editor에서 한 번 실행 후 사용 가능.
+-- API 호출: supabase.rpc('save_note', { p_site, ... })
+-- ============================================================
+CREATE OR REPLACE FUNCTION save_note(
+  p_site          TEXT,
+  p_equipment     TEXT,
+  p_date          TEXT,
+  p_xea_before    TEXT,
+  p_xea_after     TEXT,
+  p_xes_before    TEXT,
+  p_xes_after     TEXT,
+  p_cim_ver       TEXT,
+  p_updated_by    TEXT,
+  p_overview      JSONB,      -- [{"text":"..."}]
+  p_xea_details   JSONB,      -- [{"ref":"...","category":"...","title":"...","desc":"..."}]
+  p_xes_details   JSONB,
+  p_test_versions JSONB,
+  p_note_items    JSONB,      -- [{"icon":"!","text":"..."}]
+  p_history       JSONB       -- [{"date":"...","xea":"...","xes":"...","cim":"...","summary":"..."}]
+)
+RETURNS UUID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_note_id UUID;
+BEGIN
+  -- ① notes upsert — created_at은 건드리지 않음
+  INSERT INTO notes (
+    site, equipment, date,
+    xea_before, xea_after,
+    xes_before, xes_after,
+    cim_ver, updated_by, updated_at
+  )
+  VALUES (
+    p_site, p_equipment, p_date,
+    p_xea_before, p_xea_after,
+    p_xes_before, p_xes_after,
+    p_cim_ver, p_updated_by, now()
+  )
+  ON CONFLICT (site, equipment) DO UPDATE SET
+    date       = EXCLUDED.date,
+    xea_before = EXCLUDED.xea_before,
+    xea_after  = EXCLUDED.xea_after,
+    xes_before = EXCLUDED.xes_before,
+    xes_after  = EXCLUDED.xes_after,
+    cim_ver    = EXCLUDED.cim_ver,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now()
+  RETURNING id INTO v_note_id;
+
+  -- ② 기존 자식 행 전체 삭제
+  DELETE FROM overview_items WHERE note_id = v_note_id;
+  DELETE FROM detail_rows    WHERE note_id = v_note_id;
+  DELETE FROM note_items     WHERE note_id = v_note_id;
+  DELETE FROM history_rows   WHERE note_id = v_note_id;
+
+  -- ③ overview_items 삽입
+  IF jsonb_array_length(COALESCE(p_overview, '[]'::JSONB)) > 0 THEN
+    INSERT INTO overview_items (note_id, sort_order, text)
+    SELECT
+      v_note_id,
+      (ordinality - 1)::INTEGER,
+      COALESCE(item->>'text', '')
+    FROM jsonb_array_elements(p_overview) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  -- ④ XEA detail_rows 삽입
+  IF jsonb_array_length(COALESCE(p_xea_details, '[]'::JSONB)) > 0 THEN
+    INSERT INTO detail_rows (note_id, type, ref, category, title, "desc", sort_order)
+    SELECT
+      v_note_id, 'xea',
+      COALESCE(item->>'ref',      ''),
+      COALESCE(item->>'category', ''),
+      COALESCE(item->>'title',    ''),
+      COALESCE(item->>'desc',     ''),
+      (ordinality - 1)::INTEGER
+    FROM jsonb_array_elements(p_xea_details) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  -- ⑤ XES detail_rows 삽입
+  IF jsonb_array_length(COALESCE(p_xes_details, '[]'::JSONB)) > 0 THEN
+    INSERT INTO detail_rows (note_id, type, ref, category, title, "desc", sort_order)
+    SELECT
+      v_note_id, 'xes',
+      COALESCE(item->>'ref',      ''),
+      COALESCE(item->>'category', ''),
+      COALESCE(item->>'title',    ''),
+      COALESCE(item->>'desc',     ''),
+      (ordinality - 1)::INTEGER
+    FROM jsonb_array_elements(p_xes_details) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  -- ⑥ Test Version detail_rows 삽입
+  IF jsonb_array_length(COALESCE(p_test_versions, '[]'::JSONB)) > 0 THEN
+    INSERT INTO detail_rows (note_id, type, ref, category, title, "desc", sort_order)
+    SELECT
+      v_note_id, 'test',
+      COALESCE(item->>'ref',      ''),
+      COALESCE(item->>'category', ''),
+      COALESCE(item->>'title',    ''),
+      COALESCE(item->>'desc',     ''),
+      (ordinality - 1)::INTEGER
+    FROM jsonb_array_elements(p_test_versions) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  -- ⑦ note_items 삽입
+  IF jsonb_array_length(COALESCE(p_note_items, '[]'::JSONB)) > 0 THEN
+    INSERT INTO note_items (note_id, icon, text, sort_order)
+    SELECT
+      v_note_id,
+      COALESCE(item->>'icon', '!'),
+      COALESCE(item->>'text', ''),
+      (ordinality - 1)::INTEGER
+    FROM jsonb_array_elements(p_note_items) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  -- ⑧ history_rows 삽입
+  IF jsonb_array_length(COALESCE(p_history, '[]'::JSONB)) > 0 THEN
+    INSERT INTO history_rows (note_id, date, xea, xes, cim, summary, sort_order)
+    SELECT
+      v_note_id,
+      COALESCE(item->>'date',    ''),
+      COALESCE(item->>'xea',     ''),
+      COALESCE(item->>'xes',     ''),
+      COALESCE(item->>'cim',     ''),
+      COALESCE(item->>'summary', ''),
+      (ordinality - 1)::INTEGER
+    FROM jsonb_array_elements(p_history) WITH ORDINALITY AS t(item, ordinality);
+  END IF;
+
+  RETURN v_note_id;
+END;
+$$;
+
+-- ============================================================
 -- Row Level Security — Phase 1: 비활성화
 -- API 서버가 Service Role Key로 RLS 우회하여 직접 접근
 -- ============================================================
