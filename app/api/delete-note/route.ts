@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { verifyDashboardPassword } from '@/lib/dashboard-password';
 import { normalizeEquipment, normalizeSite } from '@/lib/note-utils';
 
 function parseLegacyFileName(fileName: string) {
@@ -12,7 +13,13 @@ function parseLegacyFileName(fileName: string) {
 
 export async function POST(req: Request) {
   try {
-    const { noteId, site: rawSite, equipment: rawEquipment, fileName } = await req.json();
+    const { noteId, site: rawSite, equipment: rawEquipment, fileName, password } = await req.json();
+
+    const verified = await verifyDashboardPassword(String(password || ''));
+    if (!verified) {
+      return NextResponse.json({ ok: false, message: '비밀번호가 올바르지 않습니다.' }, { status: 401 });
+    }
+
     const supabase = createServerClient();
 
     if (noteId) {

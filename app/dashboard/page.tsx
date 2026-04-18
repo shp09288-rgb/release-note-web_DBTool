@@ -52,6 +52,7 @@ export default function DashboardPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newSite, setNewSite] = useState('');
   const [newEquipment, setNewEquipment] = useState('');
+  const [passwordHint, setPasswordHint] = useState('기본 비밀번호: 0212');
 
   async function loadItems() {
     try {
@@ -67,18 +68,84 @@ export default function DashboardPage() {
     }
   }
 
-const handleEditClick = (item: any) => {
-  setEditTarget(item);
+  async function verifyPassword(password: string) {
+    const res = await fetch('/api/dashboard-password/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const result = await res.json();
+    return !!result.verified;
+  }
+
+  async function requestDashboardPassword(actionLabel: string) {
+    const password = window.prompt(`${actionLabel}하려면 비밀번호를 입력하세요.`, '');
+    if (password === null) return null;
+
+    const verified = await verifyPassword(password);
+    if (!verified) {
+      alert('비밀번호가 올바르지 않습니다.');
+      return null;
+    }
+
+    return password;
+  }
+
+  async function handleChangePassword() {
+    const currentPassword = window.prompt('현재 비밀번호를 입력하세요.', '');
+    if (currentPassword === null) return;
+
+    const newPassword = window.prompt('새 비밀번호를 입력하세요.', '');
+    if (newPassword === null) return;
+
+    const confirmPassword = window.prompt('새 비밀번호를 다시 입력하세요.', '');
+    if (confirmPassword === null) return;
+
+    if (!newPassword.trim()) {
+      alert('새 비밀번호를 비워둘 수 없습니다.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert('새 비밀번호가 서로 일치하지 않습니다.');
+      return;
+    }
+
+    const res = await fetch('/api/dashboard-password/change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const result = await res.json();
+
+    if (!result.ok) {
+      alert(result.message || '비밀번호 변경 실패');
+      return;
+    }
+
+    setPasswordHint('비밀번호 변경 완료');
+    alert('비밀번호가 변경되었습니다.');
+  }
+
+const handleEditClick = async (item: Item) => {
+  const password = await requestDashboardPassword('카드를 수정');
+  if (!password) return;
+
+  setEditTarget({ ...item, dashboardPassword: password });
   setEditSite(item.site);
   setEditEquipment(item.equipment);
   setShowEditModal(true);
 };
 
-const handleDeleteClick = async (item: any) => {
+const handleDeleteClick = async (item: Item) => {
   const ok = window.confirm(
-    `정말 삭제하시겠습니까?\n${item.site} / ${item.equipment}`
+    `정말 삭제하시겠습니까?
+${item.site} / ${item.equipment}`
   );
   if (!ok) return;
+
+  const password = await requestDashboardPassword('카드를 삭제');
+  if (!password) return;
 
   try {
     const res = await fetch('/api/delete-note', {
@@ -89,6 +156,7 @@ const handleDeleteClick = async (item: any) => {
         site: item.site,
         equipment: item.equipment,
         fileName: item.file,
+        password,
       }),
     });
 
@@ -121,6 +189,7 @@ const handleSaveEdit = async () => {
         oldFileName: editTarget.file,
         newSite: editSite,
         newEquipment: editEquipment,
+        password: editTarget.dashboardPassword,
       }),
     });
 
@@ -281,19 +350,49 @@ const handleSaveEdit = async () => {
             설비 대시보드
           </div>
 
-          <div
-            style={{
-              padding: '8px 12px',
-              borderRadius: 10,
-              background: '#fff',
-              border: '1px solid #d6dee8',
-              color: '#475569',
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            현재 사용자: {currentUser || '-'}
-          </div>          
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <div
+              style={{
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: '#fff',
+                border: '1px solid #d6dee8',
+                color: '#475569',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              현재 사용자: {currentUser || '-'}
+            </div>
+            <div
+              style={{
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                color: '#9a3412',
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {passwordHint}
+            </div>
+            <button
+              type="button"
+              onClick={handleChangePassword}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: '1px solid #cfd8e3',
+                background: '#fff',
+                color: '#334155',
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              비밀번호 변경
+            </button>
+          </div>
         </div>
 
         <div

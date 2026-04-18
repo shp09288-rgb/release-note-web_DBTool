@@ -1,0 +1,241 @@
+현재 열려 있는 프로젝트 전체를 분석해서, Next.js 기반 release-note-web 앱을 “완전 무료 운영 구조”로 전환해줘.
+
+목표 아키텍처
+- 프론트서버 Vercel 배포 가능한 Next.js 앱
+- 데이터 저장 Supabase Postgres
+- 현재 JSON 파일 기반 CRUD + lock 구조를 DB 기반으로 전환
+- 1차 로그인 없이 빠르게 운영 가능
+- 2차 Supabase Auth 기반 로그인권한수정자 추적까지 확장 가능하도록 설계
+
+중요 목표
+1. 현재 기능을 최대한 유지
+   - list-notes
+   - load-note
+   - save
+   - create-note
+   - rename-note
+   - delete-note
+   - acquire-lock
+   - release-lock
+   - lock-status
+   - generate-docx
+2. 기존 JSON 스키마와 프론트 UI 구조를 최대한 그대로 살릴 것
+3. 저장소만 “파일(JSON)”에서 “Supabase DB”로 바꿀 것
+4. 1차 구현은 로그인 없이도 동작해야 함
+5. 2차에서 Supabase Auth를 붙이기 쉽게 구조를 나눌 것
+
+==================================================
+[1차 구현 요구사항]
+==================================================
+
+1. 프로젝트 전체에서 로컬 파일 시스템 의존 코드 제거
+- process.cwd(), fs.readFileSync, fs.writeFileSync, JSON 파일 저장조회 로직 제거
+- data 폴더 기반 CRUD 제거
+- _locks 파일 기반 락 제거
+
+2. Supabase 연동 구조 추가
+- Supabase client 유틸 생성
+- 서버용 client와 브라우저용 client를 필요시 분리
+- 환경변수 사용
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - SUPABASE_SERVICE_ROLE_KEY (서버에서 필요할 경우만)
+
+3. DB 스키마 설계 및 SQL 제공
+아래 테이블 구조를 기준으로 SQL 생성
+- notes
+  - id
+  - site
+  - equipment
+  - date
+  - xea_before
+  - xea_after
+  - xes_before
+  - xes_after
+  - cim_ver
+  - updated_at
+  - updated_by
+  - created_at
+- overview_items
+  - id
+  - note_id
+  - sort_order
+  - text
+- detail_rows
+  - id
+  - note_id
+  - type ('xea'  'xes'  'test')
+  - ref
+  - category
+  - title
+  - desc
+  - sort_order
+- note_items
+  - id
+  - note_id
+  - icon
+  - text
+  - sort_order
+- history_rows
+  - id
+  - note_id
+  - date
+  - xea
+  - xes
+  - cim
+  - summary
+  - sort_order
+- edit_locks
+  - id
+  - site
+  - equipment
+  - user_name
+  - locked_at
+  - expires_at
+  - updated_at
+
+4. note 식별 규칙
+- site + equipment 조합은 유니크하게 유지
+- rename 시 siteequipment 갱신 가능해야 함
+- delete 시 연관 child row cascade delete 또는 트랜잭션 삭제 처리
+
+5. API route 전환
+현재 API route들을 Supabase 기반으로 전환
+- list-notes
+- load-note
+- test-save 또는 실제 저장 route
+- create-note
+- rename-note
+- delete-note
+- acquire-lock
+- release-lock
+- lock-status
+- generate-docx에서 note 로드하는 부분
+
+6. load-note 반환 형식 유지
+프론트가 크게 안 바뀌도록 기존 data 구조와 최대한 같은 shape로 반환
+- date
+- xeaBefore
+- xeaAfter
+- xesBefore
+- xesAfter
+- cimVer
+- overview
+- xeaDetails
+- xesDetails
+- testVersions
+- notes
+- history
+
+7. save 동작 유지
+기존 프론트 save payload를 최대한 그대로 받되,
+서버에서 notes + child tables에 upsertreplace 방식으로 저장
+
+8. lock 동작 구현
+1차에서는 로그인 없이 현재 방식 유지
+- 에디터 진입 시 localStorage 또는 prompt로 user name 확보
+- acquire-lock 시 DB의 edit_locks 사용
+- stale lock 인계 기능 유지 가능하면 유지
+- release-lock 지원
+- lock-status 확인 가능하게 구현
+
+9. generate-docx 유지
+- DOCX 생성 로직은 최대한 유지
+- 단, JSON 파일을 읽는 대신 DB에서 note 전체를 조회해서 문서 생성
+
+10. JSON 마이그레이션 지원
+- 기존 data.json 파일을 Supabase로 넣는 스크립트 추가
+- scriptsimport-json-to-supabase.ts 같은 형태 권장
+- 현재 JSON 구조를 읽어서 notes + child tables에 insert
+- 여러 JSON 파일 일괄 import 가능하게
+
+==================================================
+[2차 고도화 설계 요구사항]
+==================================================
+
+1. Supabase Auth 확장 고려
+- 지금 당장은 로그인 없이 동작
+- 그러나 구조상 나중에 Auth 붙이기 쉽게 설계
+- user_name prompt 방식을 나중에 user.id  email 기반으로 바꾸기 쉬워야 함
+
+2. 2차에서 추가할 기능을 코드 구조상 분리
+- auth adapter 또는 current user resolver 개념 도입
+예
+  - getCurrentActor()
+  - 현재는 local prompt user 반환
+  - 나중에는 Supabase session user 반환 가능
+
+3. 권한 확장 고려
+2차에서 가능한 구조를 미리 설계
+- 읽기 전용 사용자
+- 수정 가능 사용자
+- 관리자만 삭제 가능
+- site 담당자 제한 가능
+
+4. 감사 로그(audit trail) 확장 포인트
+2차에서 쉽게 붙일 수 있게
+- 누가 저장수정삭제했는지 기록 가능한 구조 제안
+- notes.updated_by 외에 note_audit_logs 테이블 추가 가능성 설계
+- 지금은 optional로 문서화만 해도 됨
+
+5. RLS(Row Level Security) 확장 포인트 문서화
+- 1차에서는 우선 빠르게 동작
+- 2차에서 RLS, Auth, role 기반 정책으로 고도화하는 방향 제안
+
+==================================================
+[산출물 요구사항]
+==================================================
+
+반드시 아래 형식으로 결과를 줘
+
+1. 변경 계획 요약
+- 무엇을 왜 바꾸는지
+
+2. DB 스키마 SQL
+- Supabase SQL Editor에 바로 붙여넣을 수 있게
+
+3. 수정 파일 목록
+- 각 파일별 변경 이유 설명
+
+4. 실제 수정 코드
+- 붙여넣기 가능한 최종 코드
+- 새 파일 포함
+
+5. 마이그레이션 스크립트
+- 기존 JSON - Supabase import 코드
+
+6. 환경변수 예시
+- .env.local 예시
+- Vercel 환경변수 예시
+
+7. 배포 절차
+- Supabase 생성
+- SQL 실행
+- env 설정
+- import 실행
+- Vercel 배포
+- 최종 테스트 순서
+
+8. 2차 고도화 가이드
+- 로그인 도입
+- 권한 도입
+- audit log 도입
+- RLS 도입
+를 어떤 순서로 하면 좋은지
+
+==================================================
+[중요 제약]
+==================================================
+
+- 기존 프론트 UI는 최대한 적게 바꿔라
+- JSON 파일 저장 방식은 제거하되, payload응답 shape는 최대한 유지
+- DOCX 생성 기능은 깨지면 안 된다
+- 현재 history  overview  xeaDetails  xesDetails  testVersions  notes 구조를 최대한 유지
+- renamedeletecreatesavelistloadlock 기능 전부 살아 있어야 한다
+- 1차는 반드시 “로그인 없이도” 돌아가야 한다
+- 2차는 Auth 확장이 가능하도록 설계만 해라
+- 불필요한 대규모 리팩토링은 하지 말고 최소 침습적으로 수정해라
+
+추가 요청
+- 현재 코드에서 Supabase 전환 시 가장 위험한 부분 5개를 먼저 짚어줘
+- 특히 generate-docx, lock, renamedelete cascade, history import 부분은 주의해서 검토해줘
