@@ -1,0 +1,27 @@
+{
+  "site": "LGD AP5",
+  "date": "2026-03-11",
+  "xeaBefore": "",
+  "xeaAfter": "",
+  "xesBefore": "",
+  "xesAfter": "",
+  "cimVer": "",
+  "overview": [],
+  "xeaDetails": [],
+  "xesDetails": [],
+  "testVersions": [],
+  "notes": [],
+  "history": [
+    {
+      "date": "2026-03-11",
+      "xea": "5.2.5 Dev3138",
+      "xes": "5.2.5 Dev1331",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3138 / XES 5.2.5 Dev1331\nTip Char. 연관건\npms #3044 간헐적으로 Tip Char. 결과값 이상\nTip Char. Debug Log 개선\nXY Drift Offset Threshold 5% 적용\npms #3170  Tip Char. Both 사용 시 Ref.Scan Data 덮어 씌움\nTip Char. Data File 저장 개선\nPMS #3007 Tip Char. X/Y 구분 요청\nGlobal Tip Char. Option Both 사용 시 Recipe에서 X, Y, Both 선택 기능 추가"
+    }
+  ],
+  "equipmentId": "EQ01",
+  "displayName": "LGD AP5 / EQ01",
+  "lastModifiedBy": "",
+  "lastModifiedTime": ""
+}

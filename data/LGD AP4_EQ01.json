@@ -1,0 +1,40 @@
+{
+  "site": "LGD AP4",
+  "equipment": "EQ01",
+  "date": "2026-03-11",
+  "xeaBefore": "",
+  "xeaAfter": "",
+  "xesBefore": "",
+  "xesAfter": "",
+  "cimVer": "",
+  "overview": [
+    ""
+  ],
+  "xeaDetails": [],
+  "xesDetails": [],
+  "testVersions": [],
+  "notes": [],
+  "history": [
+    {
+      "date": "2026-03-11",
+      "xea": "5.2.5 Dev3277",
+      "xes": "5.2.5 Dev1381",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3277 / XES 5.2.5 Dev1381\nPMS #2190 Feature Align 개선\nPMS #3486 Fine Align 시 Servo Off 이후 Fine A/F 개선\nPMS #3622 PLC Monitor & EMO Viewer 개선\nPMS #3650 CIM Command 안정화 개선\nPMS #3736 Door Open 이후 Gantry Air Off 되지 않음\nPMS #3738 Lit Pin Down에서 Job 걸렸을 때 Sample is not ready 발생\nPMS #3822 Teaching Pendent\npms #2190 Display / Feature Align 개선 건\n연관 PMS\nPMS #3798 PLC Monitor 구현 요청\nPMS #3007 Recipe / Tip Char. Option 구분 적용\nPMS #3202 Tip Char. Log 개선"
+    },
+    {
+      "date": "2025-11-21",
+      "xea": "5.2.5 Dev2866",
+      "xes": "5.2.5 Dev1172",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2866 / XES 5.2.5 Dev1172\npms #2190 Display / Feature Align 개선 건\nROI Offset 이상 개선\nPattern Match 결과 Display 시 Target Position Cross Mark 색상 변경 (Bound Color와 동일)\npms #2190 Display / Feature Align 개선 건\nBebug Log 보완\nPattern Match 결과 Display 시 Target Position Cross Mark 색상 변경 (with BoundColor)"
+    },
+    {
+      "date": "2025-11-04",
+      "xea": "5.2.5 Dev2757",
+      "xes": "5.2.5 Dev1150",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2757 / XES 5.2.5 Dev1150\n2025-05-15 [VOC] Match Edge Line 및 Score 색상 변경 기능 추가 (System/Vision/PatternParameterTeachView)\nFeature Align 개선\nCoarse/Fine Align 시 Debug Log 및 Image 저장 개선ㅉ\nCoarse/Fine Align 시 Sequence 분리 (Coarse -> Full Region, Fine -> Tip 근처 Region)\nImageMatcher 개선\n-. Match Parameter 설정 추가 (Recipe) / Matches To FInd (최대 탐색 개수)\nVertex 분석 이상\n원인 분석용 로그 강화"
+    }
+  ]
+}

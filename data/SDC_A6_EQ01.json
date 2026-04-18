@@ -1,0 +1,427 @@
+{
+  "site": "SDC A6",
+  "date": "2026-04-15",
+  "xeaBefore": "",
+  "xeaAfter": "",
+  "xesBefore": "",
+  "xesAfter": "",
+  "cimVer": "",
+  "overview": [],
+  "xeaDetails": [],
+  "xesDetails": [],
+  "testVersions": [],
+  "notes": [],
+  "history": [
+    {
+      "date": "2026-04-15",
+      "xea": "5.2.5 Dev3584",
+      "xes": "5.2.5 Dev1525",
+      "cim": "-",
+      "summary": "[Update SW] XEA 5.2.5 Dev3584 / XES 5.2.5 Dev1525\nXEA\n적용 내역\nPMS #4100 TP UI 기능 구현\nPMS #3873 Air Blow 관련 Clamp Sequence 변경\nPMS #4199 Feature Align 이상 건\nPMS #4197 Tip Exchanger / Tip Char Option X, Y, Both 선택 구현 요청\nPMS #4261 정전기 감지 관련\n정전기 FDC Report On/Off 기능 활성화 조건 변경\nAs-Is\n-Dcom.psia.xea.sdc2326\ntrue: Ionizer On 시 FDC Report Disable, Ionizer Off 시 10초 뒤 FDC Report Enable\nfalse: 상시 FDC Report\nTo-Be\n-Dcom.psia.xea.reportSCAlways\ntrue: 상시 FDC Report\nfalse: Ionizer On 시 FDC Report Disable, Ionizer Off 시 10초 뒤 FDC Report Enable\nXES\n적용 내역\nPMS #3822 TP 기능 구현\nPMS #4199 Feature Align 이상 건\nPMS #4261 정전기 관련\n정전기 값 변환 버그 수정"
+    },
+    {
+      "date": "2026-04-15",
+      "xea": "5.2.5 Dev3584",
+      "xes": "5.2.5 1526",
+      "cim": "-",
+      "summary": "[Test SW #1 Pressure Alarm] XES 5.2.5 1526 + XEA 5.2.5 Dev3584\nXES\n적용 내역\nPMS #3807 Pressure Alarm 구현 요청 건"
+    },
+    {
+      "date": "2026-04-15",
+      "xea": "5.2.5 Dev3585",
+      "xes": "5.2.5 Dev1525",
+      "cim": "-",
+      "summary": "[Test SW #2 Unit Calibration] XEA 5.2.5 Dev3585 + XES 5.2.5 Dev1525\nXEA\n적용 내역\nPMS #132 Dual Unit Calibration 기능 구현\nPMS #4195 Single Head Calibration 기능 구현\n참고 문서\n2026-03-31 [Display] Unit Calibration 기능 명세서.pptx (8.1MB)"
+    },
+    {
+      "date": "2026-03-24",
+      "xea": "5.2.5 Dev3475",
+      "xes": "5.2.5 Dev1468",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev3475 / XES 5.2.5 Dev1468\nXEA\nPMS #2565 Unit Offset\nUnit Offset 적용 기능 추가\n연관 Issue\nPMS #4000 Setup 설정 원복 현상\nSetup/Tip View의 Unit Offset 값을 읽지 못하여 정상적으로 저장되지 못하던 문제 개선\nPMS #3798 PLC Monitor 구현 요청\n목록  Scroll & 검색 기능 추가\nDB 폴더명 수정\nPLC Moitoring DB -> PLC Monitoring DB\nPMS #3438 Tip Qual. Retry Count UI 개선\nTip 변경 시 Retry Count UI Update 되도록 수정\nPMS #2897 Trouble Shooting Guide 문서 추가 및 Alarm Guide Button 추가 요청건\nAlarm View / Alarm Guide Button 추가\nManual Open Hot Key (F1) 동작 시 Trouble Shooting Guide 함께 열리도록 추가\nXEA installer에 Trouble Shooting Guide rev08 추가\nPMS #3250 Tip info의 Tip Width X, Y 구분\n첨부파일 참고: 2026-02-04 [Display] Tip Info X, Y 분기\nTip Exc. & Tiff Metadata & XEI Information & Summary File & Log File 에 Tip Info 표기 시 Tip Width X, Y 구분 적용\nTip Char. Retry Sequence & Alarm Sequence 개선\nThreshold 확인 시 Tip Width X, Y 구분하여 진행하도록 수정\nPMS #4074 Indexer Load/Unload 시 Timeout 추가\nCIM\nTimeout: 10 min. (고정값)\nAlarm ID: 90053\nAlarm Text: load/unload sequence failed. Indexer wait timeout\nPMS #4229 Sample Type 개선 요청\nFlat Panel Sample Type ID 설정 방식 변경\nVMOption\n-Dcom.psia.xea.flatPanelType\nXES\nPMS #2036 FDC / Tip Width X, Y 구분\nTip Width Y VID 추가\nVID: 612\nPMS #3250 Tip info의 Tip Width X, Y 구분\nXEA DB / System / Tip Exchanger 조회/저장 시 X, Y 구분 적용\nPMS #4041 Single Head Homing Sequence 변경\nPMS #3964 Glass Loading 후 무언정지\nCIM"
+    },
+    {
+      "date": "2026-01-09",
+      "xea": "5.2.5 Dev3142",
+      "xes": "5.2.5 Dev1333",
+      "cim": "-",
+      "summary": "Update ver XEA 5.2.5 Dev3142 / XES 5.2.5 Dev1333\nXEA 5.2.5 Dev3142\nPMS #3733 Tip Char. 4 Line 미만 분석되지 않음\n버그 수정\nPMS #3740 Setup에서 U2 -> U1 전환 시 U2가 Unloading Pos.로 이동하지 않음\nSetup에서 Unit 전환 시 현재 Unit이 Unloading Pos.로 이동하도록 개선\nPMS #3630 Y Scan Dir. & Multi Line 사용 시 Recipe 깨짐\nTaught image의 X or Y Size가 0인 경우 Multi Line 사용시 Ref.Scan Line Scan Parameter 깨짐 현상 개선\nPMS #3797 동일한 Raw로 Tip Width 계산 시 Width 값이 변함\nFilter 병렬 처리로 인한 Data 왜곡 개선\nXES 5.2.5 Dev1333\nPMS #3650 CIM <-> XEA 통신 안정화 개선\nSunje N Type Ionizer Receive Message 처리 개선\nPMS #3736 Door Open 이후 Gantry Air Off 되지 않음\nEmergency.plc 개선 및 Air 관련 로그 추가"
+    },
+    {
+      "date": "2026-01-09",
+      "xea": "-",
+      "xes": "5.2.5 Dev1334",
+      "cim": "-",
+      "summary": "Head 작업용 ver XES 5.2.5 Dev1334\nXES 5.2.5 Dev1334\nPMS #3736 Door Open 이후 Gantry Air Off 되지 않음\nEmergency.plc 개선 및 Air 관련 로그 추가"
+    },
+    {
+      "date": "2025-12-03",
+      "xea": "5.2.5 Dev2938",
+      "xes": "5.2.5 Dev1228",
+      "cim": "-",
+      "summary": "Test ver XEA 5.2.5 Dev2938 / XEA 5.2.5 Dev2941/ XES 5.2.5 Dev1228\nXEA\nPMS #132 Dual cal 기능\nXES\nPMS #132 Dual cal 기능개발\nPMS #3221 Fine 전 Vision live start"
+    },
+    {
+      "date": "2025-12-03",
+      "xea": "5.2.5 Dev2942",
+      "xes": "5.2.5 Dev1228",
+      "cim": "-",
+      "summary": "Update ver XEA 5.2.5 Dev2942 / XES 5.2.5 Dev1228\nXEA\nPMS #3526 Tip Char.Log에 Sweep frequency data 추가\nFrequency, Set point, Amplitude, Drive, Q 로그 추가\nPMS #3486 Feature align시 Servo off이후 Fine A/F개선\nFine A/F이후 fine align 시 Pattern Parameter 다시 Setting 하도록 개선\nPMS #3007 Tip Char. XY 구분 적용\nSetup/Tip Char. Option == Both 사용 시 Recipe 에서 X, Y, Both 구분 적용 가능하도록 개선\nPMS #2426MCC / Exchange 사용 시 COMPONENT_OUT 로그 구현\nXES\nPMS #3114 Glass Unlading 시 Clamp 동작하지 않음 재발\nClamp Servo On Retry 수정\nPMS #2190 Display / Feature Align 인식 개선 요청 건\nFine Pattern Match / ROI 계산 시 View Mode Offset 반영 개선\nPMS #3221 [U2] 첫번째 Scan 이상 Offset\n원인 분석을 위한 Log 보완"
+    },
+    {
+      "date": "2025-11-18",
+      "xea": "5.2.5 Dev2847",
+      "xes": "5.2.5 Dev 1167",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2847 / XES 5.2.5 Dev 1167\nXEA\nPMS #3526 Tip Char.Log에 Sweep frequency data 추가\nFrequency, Set point, Amplitude, Drive, Q 로그 추가\nPMS #2190 Display/Feature align 인식 개선 요청 건\nMCC/Exchange 사용 시 Component_Out 구현\nXES\nPMS #2190 Display/Feature align 인식 개선 요청 건\nFine Pattern Match/ROI 계산 시 View mode offset 반영 개선"
+    },
+    {
+      "date": "2025-11-11",
+      "xea": "5.2.5 Dev2787",
+      "xes": "5.2.5 Dev1158",
+      "cim": "-",
+      "summary": "[Test  Ver#1 Ref. Scan 이상] XEA 5.2.5 Dev2787 / XES 5.2.5 Dev1158\nXEA\nPMS #3221 U2 첫번째 Ref.Scan 시 이상 Offset 적용됨\n로그 추가 및 Coarse Align시에 캡처한 이미지 저장\nPMS #3202 Tip Char. 월 + 일 단위 Log 파일 생성 요청\nPMS #3170 Tip Char. Both 사용 시 Ref.Scan 덮어 씌움\nTip Char. Ref. Scan Data File 저장 개선\nPMS #2426 MCC / Exchange 사용 시 COMPONENT_OUT 로그 구현"
+    },
+    {
+      "date": "2025-11-11",
+      "xea": "5.2.5 Dev2807",
+      "xes": "5.2.5 Dev1161",
+      "cim": "-",
+      "summary": "[ Update Ver #1 Feature Align 개선 ] XEA 5.2.5 Dev2807 / XES 5.2.5 Dev1161\nXEA\nPMS #3486 Feature Align 시 Fine A/F 특이사항 조치 요청 건\nServo Off 이후 진행되는 Fine A/F 시 View Mode 변경하지 않도록 수정\nPMS #3359 Pattern Match 시 생성되는 Image File 저장 개선 요청 건\nFeature Align 시 Align 결과 Image 저장 개선\nFeature Align 시 Coarse/Fine 구분 하여 Image 저장\nCoarse/Fine 각 Align 전 · 후 Image 저장\nPMS #2190 Display / Feature Align 인식 개선 요청 건\n편의성 개선\nPattern Match 결과를 Display 할때 Layout & Score Color (Bound Color)변경 가능 하도록 UI 구현\nSystem/Vision/Pattern&Blob/Setup -> Display Color\n기능 개선\nRecipe 별로 Pattern Match 탐색 갯수 설정 가능하도록 Pattern Parameter Teach View에 탐색 갯수 설정 UI 구현\nFine Align 시 Pattern Match Retry 개선\n1st Fine Align Pattern Match (ROI 내에서 Pattern Match) -> 2nd Fine Align Pattern Match (Retry / 전체 영역 내에서 Pattern Match) 진행하도록 개선\nPMS #3202 Tip Char. 월 + 일 단위 Log 파일 생성 요청\nPMS #3170 Tip Char. Both 사용 시 Ref.Scan 덮어 씌움\nTip Char. Ref. Scan Data File 저장 개선\nPMS #2426 MCC / Exchange 사용 시 COMPONENT_OUT 로그 구현\nXES\nPMS #3114 Glass Unlading 시 Clamp 동작하지 않음 재발\nClamp Servo On Retry 수정\nPMS #2190 Display / Feature Align 인식 개선 요청 건\n편의성 개선\nBound Color 변경 기능 구현\n기능 개선\nPattern Match 시 탐색 갯수 설정 기능 구현\nPattern Match 시 전달받은 X, Y 위치 기준으로 탐색 기능 개선\nROI 계산식 개선\nFOV에 맞춰 계산 되도록 개선\nFOV Window 내 경계 조건 예외 처리 추가\nOCX File Log 기능 구현"
+    },
+    {
+      "date": "2025-10-29",
+      "xea": "5.2.5 Dev2721",
+      "xes": "5.2.5 Dev1132",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2721 / XES 5.2.5 Dev1132 / XEA 5.2.5 Dev2721 / XES 5.2.5 Dev1132\nXEA\nXEA Update List\n#2426 : MCC / TLog - Exchange 사용 시 COMPONENT_OUT 로그 추가\n#3202 : Tip Char. Log 누적 저장 기간 변경 (일 단위 추가)\n#3178 : Recipe Run 시 Tip Char. Data File 저장 개선\n#3221 : NX-TSH2326 #1 /[PMS] Unit 2 첫번째 Scan 이상 offset 적용됨\nCoarse Align 시에도 Capture Image 남도록 강화\nXES\nXEA Update List\n#2426 : MCC / TLog - Exchange 사용 시 COMPONENT_OUT 로그 추가\n#3202 : Tip Char. Log 누적 저장 기간 변경 (일 단위 추가)\n#3178 : Recipe Run 시 Tip Char. Data File 저장 개선\n#3221 : NX-TSH2326 #1 /[PMS] Unit 2 첫번째 Scan 이상 offset 적용됨\nCoarse Align 시에도 Capture Image 남도록 강화"
+    },
+    {
+      "date": "2025-10-15",
+      "xea": "5.2.5 Dev2631",
+      "xes": "5.2.5 Dev1102",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2631 / XES 5.2.5 Dev1102 / XEA 5.2.5 Dev2631 / XES 5.2.5 Dev1102\nXEA\nXEA Update List\n#3165 : change updateXYStageOpMode condition\n#3202 : Tip Char. Log 누적 저장 기간 변경\n#2960 : Job Result 용량 개선 SW Update\n#3185 : XES Start Sequence 개선\nLauncher 에서 XEService 실행 시 Process Running 상태 확인 후 실행하도록 수정\nRemote PC의 Batch 실행 완료 대기 시간 조정 (10 sec -> 120 sec)\n#3221 : 첫 번째 Reference Scan 틀어짐 원인 분석을 위한 로그 추가,  updateCamrea시 현재 Unit의 Camera로 전환하도록 수정\n#2628 : XEA 실행 중 Mode -> Vision 단계 지연 현상 로그 추가\nXES Update List\n#3185 : Slave XES Start Sequence 개선\nSlaveXES Process Running 상태 확인 후 Process 실행 할 수 있도록 수정\nXES\nXEA Update List\n#3165 : change updateXYStageOpMode condition\n#3202 : Tip Char. Log 누적 저장 기간 변경\n#2960 : Job Result 용량 개선 SW Update\n#3185 : XES Start Sequence 개선\nLauncher 에서 XEService 실행 시 Process Running 상태 확인 후 실행하도록 수정\nRemote PC의 Batch 실행 완료 대기 시간 조정 (10 sec -> 120 sec)\n#3221 : 첫 번째 Reference Scan 틀어짐 원인 분석을 위한 로그 추가,  updateCamrea시 현재 Unit의 Camera로 전환하도록 수정\n#2628 : XEA 실행 중 Mode -> Vision 단계 지연 현상 로그 추가\nXES Update List\n#3185 : Slave XES Start Sequence 개선\nSlaveXES Process Running 상태 확인 후 Process 실행 할 수 있도록 수정"
+    },
+    {
+      "date": "2025-09-23",
+      "xea": "5.2.5 Dev2532",
+      "xes": "5.2.5 Dev1068",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2532 / XES 5.2.5 Dev1068 / XEA 5.2.5 Dev2532 / XES 5.2.5 Dev1068\nXEA\nXEA Update List\nPMS #3115 Dual 활성화 시 XEA White Out\nJob Sequence 안정화 관련건\nSampleSequenceFastJob 시작 시 On-Axis Camera 설정 Sequence에서 Unit 구분 적용\nUI Sequence 안정화 관련건\nSnapshot & Off-Screen Painting 방식 변경 (연관건 pms #1490 NX-Mask / Repair Recipe 캡처 오류)\npms #3185 XEA 실행 시 C++ Error 발생\nDual 상태에서 XEA 종료 시 XES Module Release -> Vision OCX 호출 시 Exception 발생하여 순서 변경\nVision OCX 호출 Task Release -> XES Module Release\nVision 관련 Log 보완\npms #1398 Analysis Modification\nMulti Line / Extrema 분석 시 Analysis Modification 기능 추가\nAngle 적용 방식과 동일하게 최종 값에 Modification 값이 적용됨\npms #3205 Tip Positioning 관련 이상 동작 점검\nRef.Scan 틀어짐 원인 분석을 위한 로그 추가\nXES Update List\npms #3127 XY Stage 인터락 기능 개발\nMove 이후 Start/End Position 비교 후 차이 EncoderErrorValue 보다 클 경우 알람 발생\n[DB] XYStage/Info/bUseEncoderError == 1 인 경우\n[DB] XYStage/Info/EncoderErrorValue 에 설정된 값보다 차이가 클 경우 알람 발생\n[Alarm] 20508: \"[XYStage] : Invalid Controller Position + [PMAC Error String]\"\npms #3114 Glass Unloading 시 Clamp 동작하지 않음 재발\n원인 분석용 로그 추가\nXES\nXEA Update List\nPMS #3115 Dual 활성화 시 XEA White Out\nJob Sequence 안정화 관련건\nSampleSequenceFastJob 시작 시 On-Axis Camera 설정 Sequence에서 Unit 구분 적용\nUI Sequence 안정화 관련건\nSnapshot & Off-Screen Painting 방식 변경 (연관건 pms #1490 NX-Mask / Repair Recipe 캡처 오류)\npms #3185 XEA 실행 시 C++ Error 발생\nDual 상태에서 XEA 종료 시 XES Module Release -> Vision OCX 호출 시 Exception 발생하여 순서 변경\nVision OCX 호출 Task Release -> XES Module Release\nVision 관련 Log 보완\npms #1398 Analysis Modification\nMulti Line / Extrema 분석 시 Analysis Modification 기능 추가\nAngle 적용 방식과 동일하게 최종 값에 Modification 값이 적용됨\npms #3205 Tip Positioning 관련 이상 동작 점검\nRef.Scan 틀어짐 원인 분석을 위한 로그 추가\nXES Update List\npms #3127 XY Stage 인터락 기능 개발\nMove 이후 Start/End Position 비교 후 차이 EncoderErrorValue 보다 클 경우 알람 발생\n[DB] XYStage/Info/bUseEncoderError == 1 인 경우\n[DB] XYStage/Info/EncoderErrorValue 에 설정된 값보다 차이가 클 경우 알람 발생\n[Alarm] 20508: \"[XYStage] : Invalid Controller Position + [PMAC Error String]\"\npms #3114 Glass Unloading 시 Clamp 동작하지 않음 재발\n원인 분석용 로그 추가"
+    },
+    {
+      "date": "2025-09-23",
+      "xea": "-",
+      "xes": "5.2.5 Dev1071",
+      "cim": "-",
+      "summary": "[Test Ver.] XES 5.2.5 Dev1071 // 원복 시 PMAC도 기존버전으로 원복 필수 / [Test Ver.] XES 5.2.5 Dev1071 // 원복 시 PMAC도 기존버전으로 원복 필수\nXEA\nXES Update List\nPMAC Update 필요 -> 첨부파일 참조 바랍니다\nTest Version 적용 내역 (LGD P9 모니터링건)\npms #2424 Unloading 간에 XY Stage Execution Timeout: Lift Pin 발생\npms #2932 Move 도중 Fatal Following Error 발생 시 Gantry 흐름\nXES\nXES Update List\nPMAC Update 필요 -> 첨부파일 참조 바랍니다\nTest Version 적용 내역 (LGD P9 모니터링건)\npms #2424 Unloading 간에 XY Stage Execution Timeout: Lift Pin 발생\npms #2932 Move 도중 Fatal Following Error 발생 시 Gantry 흐름"
+    },
+    {
+      "date": "2025-09-09",
+      "xea": "5.2.5 Dev2499",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2499 / XEA 5.2.5 Dev2499\nXEA\nXEA Update List\nMCC / Exchange 사용 시 COMPONENT_OUT 로그 추가\nRecipe & Method Save 시 확인창 추가\nXES\nXEA Update List\nMCC / Exchange 사용 시 COMPONENT_OUT 로그 추가\nRecipe & Method Save 시 확인창 추가"
+    },
+    {
+      "date": "2025-09-08",
+      "xea": "5.2.5 Dev2494",
+      "xes": "5.2.5 Dev1049",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2494 / XES 5.2.5 Dev1049 / XEA 5.2.5 Dev2494 / XES 5.2.5 Dev1049\nXEA\nXEA Update List\nOperation mode 설정 수정 (Single 사용 시 O.P mode 확인하여 U1 설정으로 변경)\nAlarm view에서 File open을 통해 Trouble shooting guide 문서 확인 건\nTip characterizer 개선/ Debug Data개선 및 XY Drift correction process시 over correlation 되지 않도록 offset threshold 수정(100% → 5%)\nDual flag시 XEA White out 개선\n-. watchDog 기능 추가 (VMOption -Dcom.psia.xea.useWatchDog=true 추가 필요)\n-. Preview button 개선\n-. Job 진행 중 Tab 이동 시 XEA Freeze 개선\n-. Prepare vision → Z Scanner initialize 시 U1/U2 구분\nAD Cal Recipe, method 생성 시 깨짐 수정\nDual Flag 시 XEA XY Stage module initialize 안정화 개선하여 C++ Error 개선\nXES Update List\n불필요 log 삭제\nXES\nXEA Update List\nOperation mode 설정 수정 (Single 사용 시 O.P mode 확인하여 U1 설정으로 변경)\nAlarm view에서 File open을 통해 Trouble shooting guide 문서 확인 건\nTip characterizer 개선/ Debug Data개선 및 XY Drift correction process시 over correlation 되지 않도록 offset threshold 수정(100% → 5%)\nDual flag시 XEA White out 개선\n-. watchDog 기능 추가 (VMOption -Dcom.psia.xea.useWatchDog=true 추가 필요)\n-. Preview button 개선\n-. Job 진행 중 Tab 이동 시 XEA Freeze 개선\n-. Prepare vision → Z Scanner initialize 시 U1/U2 구분\nAD Cal Recipe, method 생성 시 깨짐 수정\nDual Flag 시 XEA XY Stage module initialize 안정화 개선하여 C++ Error 개선\nXES Update List\n불필요 log 삭제"
+    },
+    {
+      "date": "2025-08-26",
+      "xea": "5.2.5 Dev2407",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2407 / XEA 5.2.5 Dev2407\nXEA\nXEA Update List\nIonizer FDC Report 수정\nPrepareUnload 진행 시 Ionizer on하도록 수정\nXES\nXEA Update List\nIonizer FDC Report 수정\nPrepareUnload 진행 시 Ionizer on하도록 수정"
+    },
+    {
+      "date": "2025-08-12",
+      "xea": "5.2.5 Dev2347",
+      "xes": "5.2.5 Dev986",
+      "cim": "_20250811, AutoDlg_20250811",
+      "summary": "XEA 5.2.5 Dev2347 / XES 5.2.5 Dev986 / CIM_20250811, AutoDlg_20250811 / XEA 5.2.5 Dev2347 / XES 5.2.5 Dev986 / CIM_20250811, AutoDlg_20250811\nXEA\nXEA Update List\nExchange Load 시 Substrate Log Data 구현\nMethod UI / Process Skip 선택 여부에 따라 Chattering Remover  & Pixel Remover UI 표시 개선\nXES Update List\nMCC / Exchange Load 시 Substrate Log Data 구현\nCIM Udate List\nPIO Signal 관련 수정\nXES\nXEA Update List\nExchange Load 시 Substrate Log Data 구현\nMethod UI / Process Skip 선택 여부에 따라 Chattering Remover  & Pixel Remover UI 표시 개선\nXES Update List\nMCC / Exchange Load 시 Substrate Log Data 구현\nCIM Udate List\nPIO Signal 관련 수정"
+    },
+    {
+      "date": "2025-08-04",
+      "xea": "5.2.5 Dev2300",
+      "xes": "5.2.5 Dev960",
+      "cim": "_20250730, AutoDlg_20250624",
+      "summary": "XEA 5.2.5 Dev2300 / XES 5.2.5 Dev960 / CIM_20250730, AutoDlg_20250624 / XEA 5.2.5 Dev2300 / XES 5.2.5 Dev960 / CIM_20250730, AutoDlg_20250624\nXEA\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev 2218 포함\nGlass exchange시 cim으로부터 Substrate 정보를 받는 프로토콜 추가 및 MCC Log작성\nXES Udpate List\nGlass exchange시 cim으로부터 Substrate 정보를 받는 프로토콜 추가 및 MCC Log작성\nXES\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev 2218 포함\nGlass exchange시 cim으로부터 Substrate 정보를 받는 프로토콜 추가 및 MCC Log작성\nXES Udpate List\nGlass exchange시 cim으로부터 Substrate 정보를 받는 프로토콜 추가 및 MCC Log작성"
+    },
+    {
+      "date": "2025-07-31",
+      "xea": "5.2.5 Dev2217",
+      "xes": "5.2.5 Dev950",
+      "cim": "_20250724, AutoDlg_20250624",
+      "summary": "[Test Ver.] XEA 5.2.5 Dev2217 / XES 5.2.5 Dev950 / CIM_20250724, AutoDlg_20250624 / [Test Ver.] XEA 5.2.5 Dev2217 / XES 5.2.5 Dev950 / CIM_20250724, AutoDlg_20250624\nXEA\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev2218 포함\nEQ Mode 변경 시 Unload or Job Run 선택 가능한 사용자 Popup 추가\nUnload 선택 시 / Mode 변경 (toRemote) -> Unload\nJob Run 선택 시 / Mode 변경 (toRemote) -> Job Run -> Unload\n취소 선택 시 / Mode 변경 안됨\nXES Update List\nUpdate Version / XES 5.2.5 Dev949 포함\nEQ -> CIM / ProcessStartRequest Command 추가\nCIM & AutoDlg Update List\nAutoDlg\n첨부파일 :  SDC_A6_AFM_CIM_반입자료_20250614\nCIM_Q1\n첨부파일 : SDC_A6_AFM_CIM_반입자료_20250724\n적용 사항\nUpdate Version / SDC_A6_AFM_CIM_반입자료_PRCS_START_원복버전_20250730 포함\npms #1948 EQ Mode 변경 시 Glass 배출 시퀀스 변경\nEQ Mode 변경 시 Job Run 안되던 부분 수정\nXES\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev2218 포함\nEQ Mode 변경 시 Unload or Job Run 선택 가능한 사용자 Popup 추가\nUnload 선택 시 / Mode 변경 (toRemote) -> Unload\nJob Run 선택 시 / Mode 변경 (toRemote) -> Job Run -> Unload\n취소 선택 시 / Mode 변경 안됨\nXES Update List\nUpdate Version / XES 5.2.5 Dev949 포함\nEQ -> CIM / ProcessStartRequest Command 추가\nCIM & AutoDlg Update List\nAutoDlg\n첨부파일 :  SDC_A6_AFM_CIM_반입자료_20250614\nCIM_Q1\n첨부파일 : SDC_A6_AFM_CIM_반입자료_20250724\n적용 사항\nUpdate Version / SDC_A6_AFM_CIM_반입자료_PRCS_START_원복버전_20250730 포함\npms #1948 EQ Mode 변경 시 Glass 배출 시퀀스 변경\nEQ Mode 변경 시 Job Run 안되던 부분 수정"
+    },
+    {
+      "date": "2025-07-31",
+      "xea": "-",
+      "xes": "5.2.5 Dev949",
+      "cim": "_20250730, AutoDlg_20250624",
+      "summary": "[Update Ver.] XES 5.2.5 Dev949 / CIM_20250730, AutoDlg_20250624 / [Update Ver.] XES 5.2.5 Dev949 / CIM_20250730, AutoDlg_20250624\nXEA\nXEA Update List\npms #1057 XEService 종료 시 Exception Triggered 알람창 발생\n객체 참조 해제 시 예외처리 강화\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\npms #2929 DCol Roughness 값 단위 변경 요청\n길이 단위\nRoughness (nm), Height (Å), 그 외 (μm)\nCIM & AutoDlg Update List\nAutoDlg\n첨부파일 :  SDC_A6_AFM_CIM_반입자료_20250614\nCIM_Q1\n첨부파일 : SDC_A6_AFM_CIM_반입자료_PRCS_START_원복버전_20250730\n적용 사항\npms #2734 Lot Start 시 Substrate Info Validation 처리 (Refuse)\nREFUSE 사용 유/무 등록 (Config.ini 파일에 해당 항목 표기)\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\nPIOSignalChanged Event에 Exchange시 Job 정보 추가함.\n시점은 Robot에서 Exchange Flag On 시점부터입니다.\npms #2783 CIM Alarm Reset 문의\nAlarm Reset 후 무언정지 수정\nAlarm 발생 후 Fault&Pause -> Alarm Reset 이후 Normal 정상 처리 -> ... -> Glass Unload 시 EQ 상태를 Manual로 판단하고 무언 정지됨\nGlass Unload 시점에 EQ State 확인하는 부분 수정\npms #2562 DCol Upload 이상\nDat 파일 생성 시 제한 설정 해제\nXES\nXEA Update List\npms #1057 XEService 종료 시 Exception Triggered 알람창 발생\n객체 참조 해제 시 예외처리 강화\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\npms #2929 DCol Roughness 값 단위 변경 요청\n길이 단위\nRoughness (nm), Height (Å), 그 외 (μm)\nCIM & AutoDlg Update List\nAutoDlg\n첨부파일 :  SDC_A6_AFM_CIM_반입자료_20250614\nCIM_Q1\n첨부파일 : SDC_A6_AFM_CIM_반입자료_PRCS_START_원복버전_20250730\n적용 사항\npms #2734 Lot Start 시 Substrate Info Validation 처리 (Refuse)\nREFUSE 사용 유/무 등록 (Config.ini 파일에 해당 항목 표기)\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\nPIOSignalChanged Event에 Exchange시 Job 정보 추가함.\n시점은 Robot에서 Exchange Flag On 시점부터입니다.\npms #2783 CIM Alarm Reset 문의\nAlarm Reset 후 무언정지 수정\nAlarm 발생 후 Fault&Pause -> Alarm Reset 이후 Normal 정상 처리 -> ... -> Glass Unload 시 EQ 상태를 Manual로 판단하고 무언 정지됨\nGlass Unload 시점에 EQ State 확인하는 부분 수정\npms #2562 DCol Upload 이상\nDat 파일 생성 시 제한 설정 해제"
+    },
+    {
+      "date": "2025-07-25",
+      "xea": "5.2.5 Dev2217",
+      "xes": "5.2.5 Dev933",
+      "cim": "-",
+      "summary": "[TEST Ver.1] XEA 5.2.5 Dev2217 / XES 5.2.5 Dev933 / [TEST Ver.1] XEA 5.2.5 Dev2217 / XES 5.2.5 Dev933\nXEA\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev2218 포함\nEQ Mode 변경 시 Unload or Job Run 선택 가능한 사용자 Popup 추가\nUnload 선택 시 / Mode 변경 (toRemote) -> Unload\nJob Run 선택 시 / Mode 변경 (toRemote) -> Job Run -> Unload\n취소 선택 시 / Mode 변경 안됨\nXES Update List\nUpdate Version / XES 5.2.5 Dev934 포함\nEQ -> CIM / ProcessStartRequest Command 추가\nXES\nXEA Update List\nUpdate Version / XEA 5.2.5 Dev2218 포함\nEQ Mode 변경 시 Unload or Job Run 선택 가능한 사용자 Popup 추가\nUnload 선택 시 / Mode 변경 (toRemote) -> Unload\nJob Run 선택 시 / Mode 변경 (toRemote) -> Job Run -> Unload\n취소 선택 시 / Mode 변경 안됨\nXES Update List\nUpdate Version / XES 5.2.5 Dev934 포함\nEQ -> CIM / ProcessStartRequest Command 추가"
+    },
+    {
+      "date": "2025-07-25",
+      "xea": "5.2.5 Dev2202",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[TEST Ver.2] XEA 5.2.5 Dev2202 / [TEST Ver.2] XEA 5.2.5 Dev2202\nXEA\npms #2891 XY Stage Invalid Interlock 강화 Sequence 개선 후 ZPositioiningJob에서 이상 동작\n원인 분석을 위한 로그 강화\nXES\npms #2891 XY Stage Invalid Interlock 강화 Sequence 개선 후 ZPositioiningJob에서 이상 동작\n원인 분석을 위한 로그 강화"
+    },
+    {
+      "date": "2025-07-25",
+      "xea": "5.2.5 Dev2218",
+      "xes": "5.2.5 Dev934",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev2218 / XES 5.2.5 Dev934 / XEA 5.2.5 Dev2218 / XES 5.2.5 Dev934\nXEA\nXEA Update List\npms #2646 Job Stop 시 Stopped 되지 않고 Stopping 상태 유지되는 현상\nJob Stopping -> Stopped 로 정상 진행되도록 수정\npms #2802 XY Move 시 Stop 되는 상황에서는 Invalid 알람 예외 처리\npms #2891 XY Stage Invalid Interlock 강화 Sequence 개선 후 ZPositioiningJob에서 이상 동작\nMove 시마다 Position Invalid Check 하던 Sequence Rollback -> PositioningJob, TipExchangeJob, TipAutofocusPatternJob에만 적용\npms #2681 측정 결과 Raw File 분류\nChannel 명 별로 폴더 생성 하도록 수정\nXES Update List\npms #1057 XEService 종료 시 Exception Triggered 알람창 발생\n객체 참조 해제 시 예외처리 강화\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\nXES\nXEA Update List\npms #2646 Job Stop 시 Stopped 되지 않고 Stopping 상태 유지되는 현상\nJob Stopping -> Stopped 로 정상 진행되도록 수정\npms #2802 XY Move 시 Stop 되는 상황에서는 Invalid 알람 예외 처리\npms #2891 XY Stage Invalid Interlock 강화 Sequence 개선 후 ZPositioiningJob에서 이상 동작\nMove 시마다 Position Invalid Check 하던 Sequence Rollback -> PositioningJob, TipExchangeJob, TipAutofocusPatternJob에만 적용\npms #2681 측정 결과 Raw File 분류\nChannel 명 별로 폴더 생성 하도록 수정\nXES Update List\npms #1057 XEService 종료 시 Exception Triggered 알람창 발생\n객체 참조 해제 시 예외처리 강화\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현"
+    },
+    {
+      "date": "2025-07-25",
+      "xea": "-",
+      "xes": "-",
+      "cim": "-",
+      "summary": "CIM / CIM\nXEA\npms #1948 EQ Mode 변경 시 Glass 배출 시퀀스 변경\nEQ Mode 변경 시 Job Run 안되던 부분 수정\npms #2734 Lot Start 시 Substrate Info Validation 처리 (Refuse)\nREFUSE 사용 유/무 등록 (Config.ini 파일에 해당 항목 표기)\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\nPIOSignalChanged Event에 Exchange시 Job 정보 추가 함.\n시점은 Robot에서 Exchange Flag On 시점부터 입니다.\npms #2783 CIM Alarm Reset 문의\nAlarm Reset 후 무언정지 수정\nAlarm 발생 후 Fault&Pause -> Alarm Reset 이후 Normal 정상 처리 -> ... -> Glass Unload 시 EQ 상태를 Manual로 판단하고 무언 정지됨\nGlass Unload 시점에 EQ State 확인하는 부분 수정\npms #2562 DCol Upload 이상\nDat 파일 생성 시 제한 설정 해제\nCIM\npms #1948 EQ Mode 변경 시 Glass 배출 시퀀스 변경\nEQ Mode 변경 시 Job Run 안되던 부분 수정\npms #2734 Lot Start 시 Substrate Info Validation 처리 (Refuse)\nREFUSE 사용 유/무 등록 (Config.ini 파일에 해당 항목 표기)\npms #2557 MCC / Exchange Load 시 Substrate Log Data 구현\nPIOSignalChanged Event에 Exchange시 Job 정보 추가 함.\n시점은 Robot에서 Exchange Flag On 시점부터 입니다.\npms #2783 CIM Alarm Reset 문의\nAlarm Reset 후 무언정지 수정\nAlarm 발생 후 Fault&Pause -> Alarm Reset 이후 Normal 정상 처리 -> ... -> Glass Unload 시 EQ 상태를 Manual로 판단하고 무언 정지됨\nGlass Unload 시점에 EQ State 확인하는 부분 수정\npms #2562 DCol Upload 이상\nDat 파일 생성 시 제한 설정 해제"
+    },
+    {
+      "date": "2025-07-21",
+      "xea": "-",
+      "xes": "5.2.5 Dev920",
+      "cim": "-",
+      "summary": "CIM / XES 5.2.5 Dev920\nXES\n■ Dev919 버전 업데이트 내용 중 첫번째 제외 버전"
+    },
+    {
+      "date": "2025-07-21",
+      "xea": "5.2.5 Dev2177",
+      "xes": "5.2.5 Dev919",
+      "cim": "-",
+      "summary": "[TEST Ver.] XEA 5.2.5 Dev2177 / [TEST Ver.] XES 5.2.5 Dev919\nXEA\n■ EQ mode 변경 시 Glass 배출 시퀀스 변경\n-. EQ Mode 변경 시 Unload or Job Run 선택 가능한 사용자 Popup 추가\n. Unload 선택 시 / Mode 변경 (toRemote) -> Unload\n. Job Run 선택 시 / Mode 변경 (toRemote) -> Job Run -> Unload\n. 취소 선택 시 / Mode 변경 안됨\n■ DeV2163 버전 업데이트 내용 포함\nXES\n■ EQ -> CIM / ProcessStartRequest Command 추가\n■XEService 종료 시 Exception Triggered 알람창 발생\n-.객체 참조 해제 시 예외처리 강화\n■Gantry Moving Sequence에 따른 Fatal Limit 구분 적용\n■XY Stage Servo On 무언 정지\n-. XY Stage Fatal Following Error 발생 이후 Execution Timeout 발생하던 이슈 수정\n-. EMO & Teach Mode Bit 확인 후 PMAC Error 발생 비활성화\n-. XY stage Air up시 Down 상태확인하여 Retry 기능 추가"
+    },
+    {
+      "date": "2025-07-16",
+      "xea": "5.2.5 2163",
+      "xes": "5.2.5 Dev 907",
+      "cim": "-",
+      "summary": "XEA 5.2.5 2163 / XES 5.2.5 Dev 907\nXEA\n■ XY Stage servo on 무언정지\n-. XY Move시 Stop되는 상황 Invalid 예외처리\n-. XY stage following error 발생 시 Servo off 정상 처리되도록 수정\n■ Stopping되는 현상 일부 Debug\n-. Job Stopping에서 Stopped 정상 진행하도록 수정\n-. XY move 시 Stop 되는 상황에서는 Invalid 알람 예외 처림\nXES\n■ XY stage Air up시 Down 상태확인하여 Retry 기능 추가\n■ XY Stage servo on 무언정지\n-. Fatal following error이후 Execution timeout 현상 Debug\n-. PMAC_EMO & Teach mode Bit 수신 에러 관련 비활성화\n■ XEService 종료 시 Exception Triggered 알람참 발생\n-. 객체 참조 해재 시 예외처리 강화"
+    },
+    {
+      "date": "2025-07-16",
+      "xea": "-",
+      "xes": "5.2.5 Dev 892",
+      "cim": "-",
+      "summary": "- / XES 5.2.5 Dev 892\nXES\n■ Clamp Retry 기능 추가"
+    },
+    {
+      "date": "2025-07-08",
+      "xea": "5.2.5 2097",
+      "xes": "5.2.5 Dev 867",
+      "cim": "-",
+      "summary": "XEA 5.2.5 2097 / XES 5.2.5 Dev 867\nXEA\n■ XEA Booting 속도 높이기 위한 log강화\n■ Recipe Back up 기능 구현\nXES\n■ Fatal limit 분기\n■ XEService 종료 시 Exception triggered 알람창 관련 예외처리 강화"
+    },
+    {
+      "date": "2025-07-03",
+      "xea": "5.2.5 2065",
+      "xes": "5.2.5 Dev 867",
+      "cim": "-",
+      "summary": "XEA 5.2.5 2065 / XES 5.2.5 Dev 867\nXEA\n■ XEA Booting 속도 높이기 위한 log강화\n■ 정전기 센서 값 재조정\nXES\n■ Fatal limit 분기"
+    },
+    {
+      "date": "2025-06-23",
+      "xea": "5.2.5 2065",
+      "xes": "5.2.5 Dev 843",
+      "cim": "-",
+      "summary": "XEA 5.2.5 2065 / XES 5.2.5 Dev 843\nXES\n■ Nan → * upload 수정\n■ MCC Exchange log 추가건\nT Log –PIO (Arm) 신호 추가\n■ XEService Error 발생 강화"
+    },
+    {
+      "date": "2025-06-17",
+      "xea": "5.2.5 1983",
+      "xes": "5.2.5 Dev 826",
+      "cim": "-",
+      "summary": "XEA 5.2.5 1983 / XES 5.2.5 Dev 826\nXEA\n■ Nan → * upload 수정\n■ 정전기 센서 값 조정\nShutter Door open 명령 전 VID Upload\nShutter Door close → Ionizer On 후 VID Upload\n■ MCC Exchange log 추가건\nT Log –PIO (Arm) 신호 추가\nXES\n■ Nan → * upload 수정\n■ MCC Exchange log 추가건\nT Log –PIO (Arm) 신호 추가"
+    },
+    {
+      "date": "2025-06-02",
+      "xea": "5.2.5 1983",
+      "xes": "5.2.5 Dev 790",
+      "cim": "-",
+      "summary": "XEA 5.2.5 1983 / XES 5.2.5 Dev 790/791\nXES\n■ FDC Cabinet Temperature scale 조정\n(XES 790/791 모두 적용)\n■ Gantry Moving전 In.pos 값 확인 Sequence\n(XES 791에만 적용)\nServo off후 Gantry moving test 필요\nSingle mode일 경우 반대 Head In.pos값 확인하지 않음\nDual mode일 경우 Unit #1,#2 모두 In.pos확인"
+    },
+    {
+      "date": "2025-05-21",
+      "xea": "5.2.5 Dev 1867",
+      "xes": "5.2.5 Dev 765",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1867 / XES 5.2.5 Dev 765\nXEA\n■ FDC / Cabinet Temperature\n■ Flatten 예외처리 강화 (측정 Data남지 않는 현상)\n■ Chattering remover spline Filter 삭제\n■ Manual 측정 시 Scan on 시점 개선\n■ Direction, Pixel, Size, Overscan Parameter 변경 시 Scan off 상태라면 Scan 진행하지 않음\n■ Unit2 Servo Off 관련 수정\nXES\n■ FDC / Cabinet Temperature\nMewtocol / RD Command Format 변경\nCabinet Temperature Scaling 조정 -> 소숫점 두자리\n■ XEService 꺼짐 현상 debug (Ionizer Cmd 예외처리 강화)"
+    },
+    {
+      "date": "2025-05-20",
+      "xea": "5.2.5 Dev 1850",
+      "xes": "5.2.5 Dev 757",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1850 / XES 5.2.5 Dev 757\nXEA\n■ FDC Cabinet temperature test\n-. D:64:0 / D:66:0\n-. D:257:0/ D:261:0 (1번 Read시 Test)\n■ Remote 변환시 Glass unloading 선택 Pop창 생성(Job run, glass unloading debug)\n■ Flatten 예외처리 강화 (측정 Data남지 않는 현상)\n■ Chattering remover spline Filter 삭제\nXES\n■ Fatal limit 구분 적용\nLimit 2,500 설정\n■ FDC Cabinet temperature test\n■ XEService 꺼짐 현상 debug (Ionizer Cmd 예외처리 강화)"
+    },
+    {
+      "date": "2025-05-15",
+      "xea": "5.2.5 Dev 1823",
+      "xes": "5.2.5 Dev 751",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1823 / XES 5.2.5 Dev 751\nXEA\n■ FDC Cabinet temperature debug\n■ Remote 변환시 Glass unloading 선택 Pop창 생성\n■ Flatten 예외처리 강화 (측정 Data 남지않는 현상)\n■ Chattering remover spline Filter 삭제\nXES\n■ Fatal limit 구분 적용\n■ FDC Cabinet temperature debug\n■ XEService 꺼짐 현상 debug (Ionizer Cmd 예외처리 강화)"
+    },
+    {
+      "date": "2025-05-07",
+      "xea": "5.2.5 Dev 1792",
+      "xes": "5.2.5 Dev 733",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1792 / XES 5.2.5 Dev 733\nXEA\n■ Remote 변환시 Glass unloading 선택 Pop창 생성\nXES\n■ Remote 변환시 Glass unloading 선택 Pop창 생성"
+    },
+    {
+      "date": "2025-05-02",
+      "xea": "-",
+      "xes": "5.2.5 720",
+      "cim": "-",
+      "summary": "XES 5.2.5 720 / XES 5.2.5 720\nXEA\n■ FDC Cabinet temperature upload 수정\n■ FefatalLimit Servo on/off, Gantry moving 구분 적용\n■ Y축 이동 시 Gantry 안정화 시간 추가\n■ X축 이동 시 Servo on → Motor on시 Delay 시간 감소\nXES\n■ FDC Cabinet temperature upload 수정\n■ FefatalLimit Servo on/off, Gantry moving 구분 적용\n■ Y축 이동 시 Gantry 안정화 시간 추가\n■ X축 이동 시 Servo on → Motor on시 Delay 시간 감소"
+    },
+    {
+      "date": "2025-04-23",
+      "xea": "-",
+      "xes": "5.2.5 707",
+      "cim": "-",
+      "summary": "XES 5.2.5 707 / XES 5.2.5 707\nXEA\n■ FDC Cabinet Temperature upload 관련 Debug\nXES\n■ FDC Cabinet Temperature upload 관련 Debug"
+    },
+    {
+      "date": "2025-04-14",
+      "xea": "5.2.5 Dev 1689",
+      "xes": "5.2.5 688",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1689 / XES 5.2.5 688\nXEA\n■ FDC Cabinet lamp추가\nCABINET_TEMP1_LIVE (VID: 154)\nCABINET_TEMP2_LIVE (VID: 155)\nDB\nFacilityController/Detector/buseTemperatureData==1\nFacilityController/Detector/TemperatureDataport (Default D:40:0/D:42:0)\n■ Invalid Recipe\n특수문자 ‘&’ 입력안되도록 수정\n■ Gaussian Filter 속도 개선\n■ Job pause 구조 변경\n■ Sample align시 Set Light Strength시 Wait time추가\nDB\nVision/Camera/LightStrengthDelyTimeVision/Camera1/LightStrengthDelayTime\nXES\n■ FDC Cabinet lamp추가\nCABINET_TEMP1_LIVE (VID: 154)\nCABINET_TEMP2_LIVE (VID: 155)\nDB\nFacilityController/Detector/buseTemperatureData==1\nFacilityController/Detector/TemperatureDataport (Default D:40:0/D:42:0)\n■ Sample align Light Strength Delay time 항목 DB추가"
+    },
+    {
+      "date": "2025-04-07",
+      "xea": "5.2.5 Dev 1647",
+      "xes": "5.2.5 Dev 675",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1647 / XES 5.2.5 Dev 675\nXEA\n■ FDC Tip width X, Y 구분 (VID 612)\n■ FDC Lint pin move state 추가 (VID 363)\n■ FDC Clamp speed 변경 시 값 Upload 수정 (VID 353, VID 357)\nXES\n■ D-Col Height 항목 단위 변경"
+    },
+    {
+      "date": "2025-04-01",
+      "xea": "5.2.5 Dev 1626",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1626 / XEA 5.2.5 Dev 1626\nXEA\n■ Chattering Remover 적용\n■ 측정 결과 Folder-Debug-Recipe Folder에 Recipe 저장\n■ Sample align Off-Axis 광량 이상 Debug\nRetry 기능 추가, Vision Log 강화\n■ Invalid Recipe 생성 관련 방어 Code 추가\nXES\n■ Chattering Remover 적용\n■ 측정 결과 Folder-Debug-Recipe Folder에 Recipe 저장\n■ Sample align Off-Axis 광량 이상 Debug\nRetry 기능 추가, Vision Log 강화\n■ Invalid Recipe 생성 관련 방어 Code 추가"
+    },
+    {
+      "date": "2025-03-16",
+      "xea": "5.2.5 Dev 1525",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev 1525 / XEA 5.2.5 Dev 1525\nXEA\n■ MCC 기능 개발 (MCC Qual 6차 반영)\n■ FFU Fan Active & Normal state\nJob stop시 VID Update되도록 수정\n■ Ref.scan offset param 이상\nRiecipe Param 변경 수정\nXES\n■ MCC 기능 개발 (MCC Qual 6차 반영)\n■ FFU Fan Active & Normal state\nJob stop시 VID Update되도록 수정\n■ Ref.scan offset param 이상\nRiecipe Param 변경 수정"
+    },
+    {
+      "date": "2025-03-13",
+      "xea": "5.2.5 Dev1519",
+      "xes": "-",
+      "cim": "-",
+      "summary": "[Test ver.] XEA 5.2.5 Dev1519 / XEA 5.2.5 Dev1515\nXEA\n■ XEA - Recipe/Method Reference Param 이상 수정 건\n해당 SW 는 아래 Dev1515 버전에 포함된 내용을 전부 포함하고 있습니다\nXES\n■ FDC 추가 요청 / FFU Fan Active&Normal State\n◆ 첨부 파일 -\nVID 218 : EFU_FAN_ACTIVE_STATE"
+    },
+    {
+      "date": "2025-03-13",
+      "xea": "-",
+      "xes": "Dev635",
+      "cim": "-",
+      "summary": "XES Dev635 / XES Dev635\nXEA\n■ DC 추가 요청 / FFU Fan Active&Normal State\n◆ 첨부 파일 - VID 218 : EFU_FAN_ACTIVE_STATE\nXES\n■ DC 추가 요청 / FFU Fan Active&Normal State\n◆ 첨부 파일 - VID 218 : EFU_FAN_ACTIVE_STATE"
+    },
+    {
+      "date": "2025-03-11",
+      "xea": "5.2.5 Dev1510",
+      "xes": "5.2.5 Dev629",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1510 / XES 5.2.5 Dev629\nXEA\n■ MCC 기능 개발\n◆ MCC Qual 6차 Feedback 반영\n■ Z축 이상 동작\n◆ Off-Aixs 상태에서 Recipe/Sample Align -> Goto 시 On-Axis Auto Focus 동작 하지 않도록 수정\nXES\n■ Unit2 XY Stage Reset Fail\n◆ Unit2 Reset 시 Home 방향 수정, Home 동작 후 딜레이 추가\n■ Unit2 XY Stage Reset 완료 후 Unloading Position 안감\n◆ MoveManager plc 파일 Fatal Following Error 수정 사항 원복\n◆ 확인용 변수 추가"
+    },
+    {
+      "date": "2025-03-07",
+      "xea": "5.2.5 Dev1494",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1494 / XEA 5.2.5 Dev1494\nXEA\n■ Chattering Data 개선\n◆Pixel Remover 기능 추가\n◇Process 순서\n-. Chattering Remover -> Filter -> Pixel Remover\n■ Recipe Save 시 시간 소요 증가\n◆Recipe 저장 방식 변경 (동기 -> 비동기)\nXES\n■ Chattering Data 개선\n◆Pixel Remover 기능 추가\n◇Process 순서\n-. Chattering Remover -> Filter -> Pixel Remover\n■ Recipe Save 시 시간 소요 증가\n◆Recipe 저장 방식 변경 (동기 -> 비동기)"
+    },
+    {
+      "date": "2025-03-05",
+      "xea": "5.2.5 Dev1467",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1467 / XEA 5.2.5 Dev1467\nXEA\n■ Interlace Scan 시 Scan Error (Mismatch) 보정 기능 적용\n◆ Taught Data 의 Line Count 가 2 이상인 경우 활성화 되도록 수정\n■ Chattering Data 개선\n◆ Chattering Remover 기능 구현\n■ MCC 기능 구현\n◆ MCC Qual 5차 Feedback 반영\nXES\n■ Interlace Scan 시 Scan Error (Mismatch) 보정 기능 적용\n◆ Taught Data 의 Line Count 가 2 이상인 경우 활성화 되도록 수정\n■ Chattering Data 개선\n◆ Chattering Remover 기능 구현\n■ MCC 기능 구현\n◆ MCC Qual 5차 Feedback 반영"
+    },
+    {
+      "date": "2025-03-03",
+      "xea": "-",
+      "xes": "-",
+      "cim": "2025_03_04_Ver_XX_XX",
+      "summary": "CIM 2025_03_04_Ver_XX_XX / CIM 2025_03_04_Ver_XX_XX\nXEA\n■ ALARM CLEAR 시 상태 전환\n◆ ALARM 리셋 후 AFM에서 상태 정보 받아서 전환 되는 컨셉이었으나 해당 내용 ALARM CLEAR 버튼 실행 시 전환 되도록 수정\n■ EQ RECIPE 자동 등록\nCIM\n■ ALARM CLEAR 시 상태 전환\n◆ ALARM 리셋 후 AFM에서 상태 정보 받아서 전환 되는 컨셉이었으나 해당 내용 ALARM CLEAR 버튼 실행 시 전환 되도록 수정\n■ EQ RECIPE 자동 등록"
+    },
+    {
+      "date": "2025-02-24",
+      "xea": "5.2.5 Dev1419",
+      "xes": "-",
+      "cim": "2025_02_24_Ver_XX",
+      "summary": "XEA 5.2.5 Dev1419 / CIM 2025_02_24_Ver_XX\nXEA\n■ Interlace Scan 시 Scan Error (Mismatch) 보정 기능 적용\n◆ XY Drift Correction 기능 활성화\nProcess 순서\n◆ Filter -> Pixel Remover -> XY Drift Correction\nCIM\n■ EQ 레시피 실시간 변경 체크 하는 내용에서 버퍼링이 발생한 것으로 예상되어 해당 부분 보완"
+    },
+    {
+      "date": "2025-02-18",
+      "xea": "5.2.5 Dev1385",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1385 / XEA 5.2.5 Dev1385\nXEA\n■ Lift Pin UP 상태에서 XEA 재실행 시 안 켜짐\n◆ Reset 전 Lift Pin 상태 확인 없이 Down 동작 추가\nXES\n■ Lift Pin UP 상태에서 XEA 재실행 시 안 켜짐\n◆ Reset 전 Lift Pin 상태 확인 없이 Down 동작 추가"
+    },
+    {
+      "date": "2025-02-11",
+      "xea": "5.2.5 Dev1334",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1334 / XEA 5.2.5 Dev1334\nXEA\n■ MCC 4차 피드백 반영\nXES\n■ MCC 4차 피드백 반영"
+    },
+    {
+      "date": "2025-02-10",
+      "xea": "5.2.5 Dev1328",
+      "xes": "5.2.5 Dev580",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1328 / XES 5.2.5 Dev580\nXEA\n■ Gaussian Filter 개선\n◆Sigma 값 소수점 변경 가능\n■ PLC Monitor\n◆ View UI 업데이트 수정\n■ MCC\n◆ MCC Qual 4차 Feedback 반영\n■ Lift Pin UP 상태에서 XEA 재실행 시 안 켜짐\n◆ SDC의 경우 XEA Initialize 시 Lift Pin Down 제외\nXES\n■ 간헐적 Clamp 구동 실패\n◆ Delay_Time_Clamp -> Delay_Time 변경"
+    },
+    {
+      "date": "2025-02-07",
+      "xea": "5.2.5 Dev1321",
+      "xes": "-",
+      "cim": "2025_02_07",
+      "summary": "XEA 5.2.5 Dev1321 / CIM 2025_02_07\nXEA\n■ Filter 적용 후 Pixel Remover 적용 되도록 수정\n■ Height (Depth) 측정 시 Capture에 추세선 추가\n◆ Modification에 영향 받지 않도록 수정\nCIM\n■ GLASS 센서 정보를 이용해서 RETRY를 했으나 EXCHANGE때는 GLASS 센서 정보가 동기화 되지 않아 Interface state load 초기화를 retry 하도록 수정"
+    },
+    {
+      "date": "2025-02-05",
+      "xea": "-",
+      "xes": "-",
+      "cim": "2025_02_05_Ver_xx_xx",
+      "summary": "CIM 2025_02_05_Ver_xx_xx / CIM 2025_02_05_Ver_xx_xx\nXEA\n■ AFM 에서 레시피 파일 변경 (생성, 수정, 삭제) 시점을 파일 생성 시간으로 처리 하도록 수정하여 자동 동기화 되도록 적용\n◆ 파일 비교 시간은 1분 간격으로 설정\nCIM\n■ AFM 에서 레시피 파일 변경 (생성, 수정, 삭제) 시점을 파일 생성 시간으로 처리 하도록 수정하여 자동 동기화 되도록 적용\n◆ 파일 비교 시간은 1분 간격으로 설정"
+    },
+    {
+      "date": "2025-02-03",
+      "xea": "5.2.5 Dev1284",
+      "xes": "-",
+      "cim": "-",
+      "summary": "XEA 5.2.5 Dev1284 / XEA 5.2.5 Dev1284\nXEA\n■ Pixel Remover 기능 구현\n■ Recipe 동기화 방법 변경\n◆ 새로운 항목에 대해 Write 할 때 상위항목 안에 추가될 수 있도록 수정\nXES\n■ Pixel Remover 기능 구현\n■ Recipe 동기화 방법 변경\n◆ 새로운 항목에 대해 Write 할 때 상위항목 안에 추가될 수 있도록 수정"
+    }
+  ],
+  "equipmentId": "EQ01",
+  "displayName": "SDC A6 / EQ01",
+  "lastModifiedBy": "",
+  "lastModifiedTime": "",
+  "_convertedFrom": "2026-04-17_135405_latest.json"
+}
