@@ -52,6 +52,7 @@ export default function DashboardPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newSite, setNewSite] = useState('');
   const [newEquipment, setNewEquipment] = useState('');
+  const [passwordHint, setPasswordHint] = useState('기본 비밀번호: 0212');
 
   async function loadItems() {
     try {
@@ -122,6 +123,7 @@ export default function DashboardPage() {
       return;
     }
 
+    setPasswordHint('비밀번호 변경 완료');
     alert('비밀번호가 변경되었습니다.');
   }
 
@@ -129,7 +131,7 @@ const handleEditClick = async (item: Item) => {
   const password = await requestDashboardPassword('카드를 수정');
   if (!password) return;
 
-  setEditTarget(item);
+  setEditTarget({ ...item, dashboardPassword: password });
   setEditSite(item.site);
   setEditEquipment(item.equipment);
   setShowEditModal(true);
@@ -176,9 +178,6 @@ ${item.site} / ${item.equipment}`
 const handleSaveEdit = async () => {
   if (!editTarget) return;
 
-  const password = await requestDashboardPassword('카드 수정을 저장');
-  if (!password) return;
-
   try {
     const res = await fetch('/api/rename-note', {
       method: 'POST',
@@ -190,7 +189,7 @@ const handleSaveEdit = async () => {
         oldFileName: editTarget.file,
         newSite: editSite,
         newEquipment: editEquipment,
-        password,
+        password: editTarget.dashboardPassword,
       }),
     });
 
@@ -364,6 +363,19 @@ const handleSaveEdit = async () => {
               }}
             >
               현재 사용자: {currentUser || '-'}
+            </div>
+            <div
+              style={{
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                color: '#9a3412',
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {passwordHint}
             </div>
             <button
               type="button"
