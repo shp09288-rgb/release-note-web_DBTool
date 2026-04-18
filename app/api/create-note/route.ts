@@ -1,43 +1,11 @@
-import { access, mkdir, writeFile } from 'fs/promises';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
 
 function normalizeSite(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '_')
-    .toUpperCase();
+  return String(value ?? '').trim().replace(/\s+/g, '_').toUpperCase();
 }
 
 function normalizeEquipment(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase();
-}
-
-function buildFileName(site: string, equipment: string) {
-  return `${site}_${equipment}.json`;
-}
-
-function buildEmptyNote(site: string, equipment: string) {
-  const today = new Date().toISOString().slice(0, 10);
-
-  return {
-    site,
-    equipment,
-    date: today,
-    xeaBefore: '',
-    xeaAfter: '',
-    xesBefore: '',
-    xesAfter: '',
-    cimVer: '',
-    overview: [''],
-    xeaDetails: [],
-    xesDetails: [],
-    testVersions: [],
-    notes: [],
-    history: [],
-  };
+  return String(value ?? '').trim().replace(/\s+/g, '').toUpperCase();
 }
 
 export async function POST(req: Request) {
@@ -48,50 +16,54 @@ export async function POST(req: Request) {
 
     if (!site || !equipment) {
       return Response.json(
-        {
-          ok: false,
-          message: 'site와 equipment를 모두 입력해야 합니다.',
-        },
+        { ok: false, message: 'site와 equipment를 모두 입력해야 합니다.' },
         { status: 400 }
       );
     }
 
-    const dataDir = path.join(process.cwd(), 'data');
-    await mkdir(dataDir, { recursive: true });
+    const supabase = createServerClient();
 
-    const fileName = buildFileName(site, equipment);
-    const filePath = path.join(dataDir, fileName);
+    // 중복 확인
+    const { data: existing } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('site', site)
+      .eq('equipment', equipment)
+      .maybeSingle();
 
-    try {
-      await access(filePath);
+    if (existing) {
       return Response.json(
-        {
-          ok: false,
-          message: '이미 같은 Site / Equipment 카드가 존재합니다.',
-        },
+        { ok: false, message: '이미 같은 Site / Equipment 카드가 존재합니다.' },
         { status: 409 }
       );
-    } catch {
-      // 파일 없음 → 정상 진행
     }
 
-    const emptyNote = buildEmptyNote(site, equipment);
-    await writeFile(filePath, JSON.stringify(emptyNote, null, 2), 'utf-8');
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { error } = await supabase.from('notes').insert({
+      site,
+      equipment,
+      date: today,
+      xea_before: '',
+      xea_after: '',
+      xes_before: '',
+      xes_after: '',
+      cim_ver: '',
+    });
+
+    if (error) throw error;
 
     return Response.json({
       ok: true,
       message: '새 카드가 생성되었습니다.',
-      file: fileName,
+      file: `${site}_${equipment}.json`,
       site,
       equipment,
     });
   } catch (err) {
-    console.error(err);
+    console.error('[create-note]', err);
     return Response.json(
-      {
-        ok: false,
-        message: '새 카드 생성 실패',
-      },
+      { ok: false, message: '새 카드 생성 실패' },
       { status: 500 }
     );
   }

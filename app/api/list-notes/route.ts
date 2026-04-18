@@ -1,110 +1,93 @@
-import { readdir, readFile, stat } from 'fs/promises';
-import path from 'path';
-import { getLockMeta } from '@/lib/lock-utils';
-
-type ReleaseNoteData = {
-  site?: string;
-  equipment?: string;
-  date?: string;
-  xeaAfter?: string;
-  xesAfter?: string;
-  cimVer?: string;
-  overview?: unknown;
-  history?: unknown;
-};
-
-function parseSiteAndEquipment(fileName: string) {
-  const name = fileName.replace('.json', '');
-  const parts = name.split('_');
-  const equipment = parts.pop() || '';
-  const site = parts.join('_');
-  return { site, equipment };
-}
-
-function safeArrayLength(value: unknown) {
-  return Array.isArray(value) ? value.length : 0;
-}
-
-function normalizeText(value: unknown) {
-  return typeof value === 'string' ? value : '';
-}
+import { createServerClient } from '@/lib/supabase';
+import { LOCK_STALE_MS } from '@/lib/lock-utils';
 
 export async function GET() {
   try {
-    const dataDir = path.join(process.cwd(), 'data');
-    const files = await readdir(dataDir);
+    const supabase = createServerClient();
 
-    const jsonFiles = files.filter((file) => file.endsWith('.json'));
+    // 4개 테이블을 병렬 조회
+    const [notesResult, overviewResult, historyResult, locksResult] =
+      await Promise.all([
+        supabase.from('notes').select('*'),
+        supabase.from('overview_items').select('note_id'),
+        supabase.from('history_rows').select('note_id'),
+        supabase.from('edit_locks').select('*'),
+      ]);
 
-    const items = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const filePath = path.join(dataDir, file);
+    const notes = notesResult.data ?? [];
+    const overviewItems = overviewResult.data ?? [];
+    const historyItems = historyResult.data ?? [];
+    const locks = locksResult.data ?? [];
 
-        const { site: fallbackSite, equipment: fallbackEquipment } =
-          parseSiteAndEquipment(file);
-
-        let parsed: ReleaseNoteData = {};
-        let fileStat: Awaited<ReturnType<typeof stat>> | null = null;
-
-        try {
-          const [raw, statResult] = await Promise.all([
-            readFile(filePath, 'utf-8'),
-            stat(filePath),
-          ]);
-
-          parsed = JSON.parse(raw) as ReleaseNoteData;
-          fileStat = statResult;
-        } catch (readErr) {
-          console.error(`[list-notes] failed to read ${file}`, readErr);
-        }
-
-        const site = normalizeText(parsed.site) || fallbackSite;
-        const equipment = normalizeText(parsed.equipment) || fallbackEquipment;
-
-        const overviewCount = safeArrayLength(parsed.overview);
-        const historyCount = safeArrayLength(parsed.history);
-
-        const hasOverview = overviewCount > 0;
-        const hasHistory = historyCount > 0;
-
-        const hasData =
-          hasOverview ||
-          hasHistory ||
-          !!normalizeText(parsed.date) ||
-          !!normalizeText(parsed.xeaAfter) ||
-          !!normalizeText(parsed.xesAfter) ||
-          !!normalizeText(parsed.cimVer);
-
-        const lock = await getLockMeta(site, equipment);
-
-        const status = lock
-          ? lock.stale
-            ? 'stale_lock'
-            : 'locked'
-          : hasData
-          ? 'editable'
-          : 'no_data';
-
-        return {
-          file,
-          site,
-          equipment,
-          date: normalizeText(parsed.date),
-          xeaAfter: normalizeText(parsed.xeaAfter),
-          xesAfter: normalizeText(parsed.xesAfter),
-          cimVer: normalizeText(parsed.cimVer),
-          hasOverview,
-          hasHistory,
-          overviewCount,
-          historyCount,
-          updatedAt: fileStat?.mtime?.toISOString?.() || '',
-          status,
-          lockUser: lock?.user || '',
-          lockUpdatedAt: lock?.updatedAt || '',
-          lockStale: !!lock?.stale,
-        };
-      })
+    // note_id별 개수 집계
+    const overviewCounts = new Map<string, number>();
+    const historyCounts = new Map<string, number>();
+    overviewItems.forEach((r) =>
+      overviewCounts.set(r.note_id, (overviewCounts.get(r.note_id) ?? 0) + 1)
     );
+    historyItems.forEach((r) =>
+      historyCounts.set(r.note_id, (historyCounts.get(r.note_id) ?? 0) + 1)
+    );
+
+    // 락 맵 (site__equipment → 락 정보)
+    type LockEntry = {
+      user_name: string;
+      updated_at: string;
+      stale: boolean;
+    };
+    const lockMap = new Map<string, LockEntry>();
+    locks.forEach((lock) => {
+      const age = Date.now() - new Date(lock.updated_at as string).getTime();
+      lockMap.set(`${lock.site}__${lock.equipment}`, {
+        user_name: lock.user_name as string,
+        updated_at: lock.updated_at as string,
+        stale: age > LOCK_STALE_MS,
+      });
+    });
+
+    const items = notes.map((note) => {
+      const overviewCount = overviewCounts.get(note.id as string) ?? 0;
+      const historyCount = historyCounts.get(note.id as string) ?? 0;
+      const hasOverview = overviewCount > 0;
+      const hasHistory = historyCount > 0;
+      const hasData =
+        hasOverview ||
+        hasHistory ||
+        !!(note.date as string) ||
+        !!(note.xea_after as string) ||
+        !!(note.xes_after as string) ||
+        !!(note.cim_ver as string);
+
+      const lock = lockMap.get(`${note.site}__${note.equipment}`);
+
+      const status = lock
+        ? lock.stale
+          ? 'stale_lock'
+          : 'locked'
+        : hasData
+        ? 'editable'
+        : 'no_data';
+
+      return {
+        // file 필드: 프론트 호환성 유지 (delete/rename 시 식별자로 사용)
+        file: `${note.site}_${note.equipment}.json`,
+        site: note.site as string,
+        equipment: note.equipment as string,
+        date: (note.date as string) ?? '',
+        xeaAfter: (note.xea_after as string) ?? '',
+        xesAfter: (note.xes_after as string) ?? '',
+        cimVer: (note.cim_ver as string) ?? '',
+        hasOverview,
+        hasHistory,
+        overviewCount,
+        historyCount,
+        updatedAt: (note.updated_at as string) ?? '',
+        status,
+        lockUser: lock?.user_name ?? '',
+        lockUpdatedAt: lock?.updated_at ?? '',
+        lockStale: !!lock?.stale,
+      };
+    });
 
     items.sort((a, b) => {
       const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -112,16 +95,9 @@ export async function GET() {
       return bTime - aTime;
     });
 
-    return Response.json({
-      ok: true,
-      items,
-    });
+    return Response.json({ ok: true, items });
   } catch (err) {
-    console.error(err);
-
-    return Response.json({
-      ok: false,
-      items: [],
-    });
+    console.error('[list-notes]', err);
+    return Response.json({ ok: false, items: [] });
   }
 }

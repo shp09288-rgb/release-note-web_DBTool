@@ -1,101 +1,95 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
 
 function normalizeSite(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '_')
-    .toUpperCase();
+  return String(value ?? '').trim().replace(/\s+/g, '_').toUpperCase();
 }
 
 function normalizeEquipment(value: string) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase();
+  return String(value ?? '').trim().replace(/\s+/g, '').toUpperCase();
+}
+
+// fileName(e.g. "SDC_A6_EQ01.json") → { site: "SDC_A6", equipment: "EQ01" }
+function parseSiteAndEquipment(fileName: string) {
+  const name = fileName.replace(/\.json$/i, '');
+  const parts = name.split('_');
+  const equipment = parts.pop() ?? '';
+  const site = parts.join('_');
+  return { site, equipment };
 }
 
 export async function POST(req: Request) {
   try {
     const { oldFileName, newSite, newEquipment } = await req.json();
 
-    const site = normalizeSite(newSite);
-    const equipment = normalizeEquipment(newEquipment);
+    const newSiteNorm = normalizeSite(newSite);
+    const newEquipmentNorm = normalizeEquipment(newEquipment);
 
-    if (!oldFileName || !site || !equipment) {
+    if (!oldFileName || !newSiteNorm || !newEquipmentNorm) {
+      return NextResponse.json({ ok: false, message: '필수 값 누락' });
+    }
+
+    const { site: oldSite, equipment: oldEquipment } =
+      parseSiteAndEquipment(oldFileName);
+
+    const supabase = createServerClient();
+
+    // 기존 노트 확인
+    const { data: oldNote } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('site', oldSite)
+      .eq('equipment', oldEquipment)
+      .maybeSingle();
+
+    if (!oldNote) {
       return NextResponse.json({
         ok: false,
-        message: '필수 값 누락',
+        message: `기존 카드 없음: ${oldFileName}`,
       });
     }
 
-    const dataDir = path.join(process.cwd(), 'data');
+    const isSame = oldSite === newSiteNorm && oldEquipment === newEquipmentNorm;
 
-    const oldFile = path.join(dataDir, oldFileName);
-    const newFileName = `${site}_${equipment}.json`;
-    const newFile = path.join(dataDir, newFileName);
+    // 이름이 바뀌는 경우 충돌 확인
+    if (!isSame) {
+      const { data: conflict } = await supabase
+        .from('notes')
+        .select('id')
+        .eq('site', newSiteNorm)
+        .eq('equipment', newEquipmentNorm)
+        .maybeSingle();
 
-    if (!fs.existsSync(oldFile)) {
-      return NextResponse.json({
-        ok: false,
-        message: `기존 파일 없음: ${oldFileName}`,
-      });
+      if (conflict) {
+        return NextResponse.json({
+          ok: false,
+          message: '이미 존재하는 카드입니다.',
+        });
+      }
     }
 
-    if (fs.existsSync(newFile) && oldFileName !== newFileName) {
-      return NextResponse.json({
-        ok: false,
-        message: '이미 존재하는 카드입니다.',
-      });
-    }
+    // notes 테이블 갱신
+    const { error: updateError } = await supabase
+      .from('notes')
+      .update({ site: newSiteNorm, equipment: newEquipmentNorm })
+      .eq('id', oldNote.id);
 
-    // 기존 내용 읽기
-    const raw = fs.readFileSync(oldFile, 'utf-8');
-    const json = JSON.parse(raw);
+    if (updateError) throw updateError;
 
-    // 내부 site/equipment도 같이 갱신
-    json.site = site;
-    json.equipment = equipment;
-
-    // 같은 이름이면 내용만 갱신
-    if (oldFileName === newFileName) {
-      fs.writeFileSync(oldFile, JSON.stringify(json, null, 2), 'utf-8');
-
-      return NextResponse.json({
-        ok: true,
-        message: '카드 정보가 수정되었습니다.',
-        file: newFileName,
-      });
-    }
-
-    // 새 파일명으로 저장 후 기존 파일 삭제
-    fs.writeFileSync(newFile, JSON.stringify(json, null, 2), 'utf-8');
-    fs.unlinkSync(oldFile);
-
-    // lock 파일도 이름 변경
-    const lockDir = path.join(dataDir, '_locks');
-
-    const oldLockName = oldFileName.replace(/\.json$/i, '.lock');
-    const newLockName = newFileName.replace(/\.json$/i, '.lock');
-
-    const oldLock = path.join(lockDir, oldLockName);
-    const newLock = path.join(lockDir, newLockName);
-
-    if (fs.existsSync(oldLock)) {
-      fs.renameSync(oldLock, newLock);
-    }
+    // 락도 함께 이관 (없으면 no-op)
+    await supabase
+      .from('edit_locks')
+      .update({ site: newSiteNorm, equipment: newEquipmentNorm })
+      .eq('site', oldSite)
+      .eq('equipment', oldEquipment);
 
     return NextResponse.json({
       ok: true,
-      message: '카드 이름이 변경되었습니다.',
-      file: newFileName,
+      message: isSame ? '카드 정보가 수정되었습니다.' : '카드 이름이 변경되었습니다.',
+      file: `${newSiteNorm}_${newEquipmentNorm}.json`,
     });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({
-      ok: false,
-      message: '서버 에러',
-    });
+    console.error('[rename-note]', err);
+    return NextResponse.json({ ok: false, message: '서버 에러' });
   }
 }
