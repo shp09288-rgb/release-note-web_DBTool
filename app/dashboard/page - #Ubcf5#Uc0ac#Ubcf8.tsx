@@ -25,20 +25,14 @@ type Item = {
 
 type SortKey = 'recent' | 'site' | 'equipment';
 
-const USER_NAME_STORAGE_KEY = 'rn_user_name';
-
-function normalizeUserName(value: string | null | undefined) {
-  const trimmed = String(value || '').trim();
-  return trimmed || 'User01';
-}
-
 function getOrCreateUserName() {
-  const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
+  const key = 'rn_user_name';
+  const existing = window.localStorage.getItem(key);
   if (existing && existing.trim()) return existing.trim();
 
   const input = window.prompt('대시보드에서 사용할 이름을 입력하세요.', 'User01');
-  const finalName = normalizeUserName(input);
-  window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalName);
+  const finalName = (input || 'User01').trim() || 'User01';
+  window.localStorage.setItem(key, finalName);
   return finalName;
 }
 
@@ -58,6 +52,7 @@ export default function DashboardPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newSite, setNewSite] = useState('');
   const [newEquipment, setNewEquipment] = useState('');
+  const [passwordHint, setPasswordHint] = useState('기본 비밀번호: 0212');
 
   async function loadItems() {
     try {
@@ -96,16 +91,6 @@ export default function DashboardPage() {
     return password;
   }
 
-  function handleChangeUserName() {
-    const input = window.prompt('저장/편집 이력에 표시할 사용자 이름을 입력하세요.', currentUser || 'User01');
-    if (input === null) return;
-
-    const nextUser = normalizeUserName(input);
-    window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
-    setCurrentUser(nextUser);
-    alert(`사용자 이름이 '${nextUser}'(으)로 변경되었습니다.`);
-  }
-
   async function handleChangePassword() {
     const currentPassword = window.prompt('현재 비밀번호를 입력하세요.', '');
     if (currentPassword === null) return;
@@ -138,6 +123,7 @@ export default function DashboardPage() {
       return;
     }
 
+    setPasswordHint('비밀번호 변경 완료');
     alert('비밀번호가 변경되었습니다.');
   }
 
@@ -145,7 +131,7 @@ const handleEditClick = async (item: Item) => {
   const password = await requestDashboardPassword('카드를 수정');
   if (!password) return;
 
-  setEditTarget(item);
+  setEditTarget({ ...item, dashboardPassword: password });
   setEditSite(item.site);
   setEditEquipment(item.equipment);
   setShowEditModal(true);
@@ -192,9 +178,6 @@ ${item.site} / ${item.equipment}`
 const handleSaveEdit = async () => {
   if (!editTarget) return;
 
-  const password = await requestDashboardPassword('카드 수정을 저장');
-  if (!password) return;
-
   try {
     const res = await fetch('/api/rename-note', {
       method: 'POST',
@@ -206,7 +189,7 @@ const handleSaveEdit = async () => {
         oldFileName: editTarget.file,
         newSite: editSite,
         newEquipment: editEquipment,
-        password,
+        password: editTarget.dashboardPassword,
       }),
     });
 
@@ -381,21 +364,19 @@ const handleSaveEdit = async () => {
             >
               현재 사용자: {currentUser || '-'}
             </div>
-            <button
-              type="button"
-              onClick={handleChangeUserName}
+            <div
               style={{
-                padding: '10px 14px',
+                padding: '8px 12px',
                 borderRadius: 10,
-                border: '1px solid #cfd8e3',
-                background: '#fff',
-                color: '#334155',
-                cursor: 'pointer',
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                color: '#9a3412',
+                fontSize: 13,
                 fontWeight: 700,
               }}
             >
-              이름 수정
-            </button>
+              {passwordHint}
+            </div>
             <button
               type="button"
               onClick={handleChangePassword}

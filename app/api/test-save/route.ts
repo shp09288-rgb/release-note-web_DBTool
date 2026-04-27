@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const actor = await getCurrentActor(req);
+    const updatedBy = String(body.updatedBy || actor.name || 'Anonymous').trim() || 'Anonymous';
 
     const site = normalizeSite(body.site);
     const equipment = normalizeEquipment(body.equipment);
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
           xes_before: String(body.xesBefore || ''),
           xes_after: String(body.xesAfter || ''),
           cim_ver: String(body.cimVer || ''),
-          updated_by: actor.name,
+          updated_by: updatedBy,
         },
         { onConflict: 'site,equipment' }
       )
@@ -124,10 +125,10 @@ export async function POST(req: Request) {
       message: '저장 완료',
       file: buildSyntheticFileName(site, equipment),
       noteId,
-      updatedBy: actor.name,
+      updatedBy,
     });
   } catch (err) {
     console.error('[test-save]', err);
-    return Response.json({ ok: false, message: '저장 실패' }, { status: 500 });
+    return Response.json({ ok: false, message: err instanceof Error ? err.message : '저장 실패' }, { status: 500 });
   }
 }

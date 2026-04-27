@@ -43,6 +43,13 @@ interface HistoryRow {
   summary: string;
 }
 
+const USER_NAME_STORAGE_KEY = 'rn_user_name';
+
+function normalizeUserName(value: string | null | undefined) {
+  const trimmed = String(value || '').trim();
+  return trimmed || 'User01';
+}
+
 export default function EditorPage({ params }: Props) {
   const router = useRouter();
 
@@ -129,14 +136,12 @@ export default function EditorPage({ params }: Props) {
   }, [site, equipment]);
 
 useEffect(() => {
-  const key = 'rn_user_name';
-  const existing = window.localStorage.getItem(key);
-  const finalUser =
-    (existing && existing.trim()) ||
-    (window.prompt('에디터에서 사용할 이름을 입력하세요.', 'User01') || 'User01').trim() ||
-    'User01';
+  const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
+  const finalUser = existing && existing.trim()
+    ? existing.trim()
+    : normalizeUserName(window.prompt('에디터에서 사용할 이름을 입력하세요.', 'User01'));
 
-  window.localStorage.setItem(key, finalUser);
+  window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalUser);
   setCurrentUser(finalUser);
 
   const acquire = async () => {
@@ -208,6 +213,16 @@ useEffect(() => {
   };
 }, [site, equipment]);
 
+  const handleChangeUserName = () => {
+    const input = window.prompt('저장/편집 이력에 표시할 사용자 이름을 입력하세요.', currentUser || 'User01');
+    if (input === null) return;
+
+    const nextUser = normalizeUserName(input);
+    window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
+    setCurrentUser(nextUser);
+    alert(`사용자 이름이 '${nextUser}'(으)로 변경되었습니다. 이미 잡힌 편집 락은 페이지를 다시 열면 새 이름으로 갱신됩니다.`);
+  };
+
   const navItems: { key: SectionKey; label: string; num: string }[] = [
     { key: 'basic', label: '기본 정보', num: '1' },
     { key: 'xea', label: 'XEA 상세', num: '2' },
@@ -238,6 +253,7 @@ useEffect(() => {
       testVersions,
       notes,
       history,
+      updatedBy: currentUser || 'Anonymous',
     };
     
 
@@ -246,7 +262,6 @@ useEffect(() => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-name': currentUser || 'Anonymous',
         },
         body: JSON.stringify(payload),
       });
@@ -258,8 +273,8 @@ useEffect(() => {
       alert(`저장 완료`);
       setIsDirty(false);
     } catch (err) {
-      alert('저장 실패');
       console.error(err);
+      alert(err instanceof Error ? err.message : '저장 실패');
     }
   };
 
@@ -603,6 +618,23 @@ const handleNewDocument = () => {
     }}
   >
     대시보드로 돌아가기
+  </button>
+
+  <button
+    type="button"
+    onClick={handleChangeUserName}
+    style={{
+      background: '#ffffff',
+      color: '#173b73',
+      padding: '8px 12px',
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 800,
+      border: '1px solid rgba(255,255,255,0.7)',
+      cursor: 'pointer',
+    }}
+  >
+    이름 수정: {currentUser || '-'}
   </button>
 
   <div style={{ fontSize: 12, color: '#d7e6ff' }}>
