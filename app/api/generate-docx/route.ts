@@ -692,6 +692,7 @@ function buildDocXml(data: {
   overview: string[];
   xeaDetails: DetailRow[];
   xesDetails: DetailRow[];
+  testVersions: DetailRow[];
   notes: NoteRow[];
   history: HistoryRow[];
 }) {
@@ -726,6 +727,16 @@ function buildDocXml(data: {
         : ''
     }
     ${buildSysDetail('XES', data.xesDetails, data.xesBefore, data.xesAfter)}
+    ${spacer()}
+    ${
+      data.testVersions?.length
+        ? para(run('2.3  Test Version', { bold: true, color: NAVY, size: PT11 }), {
+            before: 50,
+            after: 50,
+          })
+        : ''
+    }
+    ${buildSysDetail('Test Version', data.testVersions, 'Export', 'Verified')}
     ${spacer()}${spacer()}
     ${secTitle('4.  Important Notes')}
     ${spacer()}
@@ -808,6 +819,7 @@ export async function POST(req: Request) {
       overview: Array.isArray(body.overview) ? body.overview : [],
       xeaDetails: Array.isArray(body.xeaDetails) ? body.xeaDetails : [],
       xesDetails: Array.isArray(body.xesDetails) ? body.xesDetails : [],
+      testVersions: Array.isArray(body.testVersions) ? body.testVersions : [],
       notes: Array.isArray(body.notes) ? body.notes : [],
       history: Array.isArray(body.history) ? body.history : [],
     };
