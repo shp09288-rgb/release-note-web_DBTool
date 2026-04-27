@@ -1,4 +1,4 @@
-import { getLockMeta } from '@/lib/lock-utils';
+import { deleteExpiredLocks, getLockMeta } from '@/lib/lock-utils';
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +11,7 @@ export async function POST(req: Request) {
       );
     }
 
+    await deleteExpiredLocks();
     const lock = await getLockMeta(site, equipment);
 
     return Response.json({

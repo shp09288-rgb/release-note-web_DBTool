@@ -14,15 +14,15 @@ export async function POST(req: Request) {
 
     const supabase = createServerClient();
 
-    const { data: existing, error: existingError } = await supabase
+    const { data: existingRows, error: existingError } = await supabase
       .from('notes')
       .select('id')
       .eq('site', site)
       .eq('equipment', equipment)
-      .maybeSingle();
+      .limit(1);
 
     if (existingError) throw existingError;
-    if (existing) {
+    if (Array.isArray(existingRows) && existingRows.length > 0) {
       return NextResponse.json({ ok: false, message: '이미 같은 Site / Equipment 카드가 존재합니다.' }, { status: 409 });
     }
 

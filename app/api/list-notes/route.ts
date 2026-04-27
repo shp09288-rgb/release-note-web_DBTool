@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase';
+import { deleteExpiredLocks } from '@/lib/lock-utils';
 import { buildSyntheticFileName, normalizeEquipment, normalizeSite } from '@/lib/note-utils';
 
 type NoteRow = {
@@ -27,6 +28,10 @@ type LockRow = {
 export async function GET() {
   try {
     const supabase = createServerClient();
+
+    // 만료된 편집 락은 대시보드 표시 전에 정리한다.
+    // 브라우저 종료/네트워크 끊김으로 release-lock이 실패해도 10분 뒤 자동 복구된다.
+    await deleteExpiredLocks();
 
     const [
       { data: notes, error: notesError },
@@ -63,7 +68,7 @@ export async function GET() {
       lockMap.set(`${normalizeSite(lock.site)}__${normalizeEquipment(lock.equipment)}`, lock);
     }
 
-    const items = ((notes || []) as NoteRow[]).map((note) => {
+    const enrichedItems = ((notes || []) as NoteRow[]).map((note) => {
       const key = `${normalizeSite(note.site)}__${normalizeEquipment(note.equipment)}`;
       const lock = lockMap.get(key);
       const stale = lock?.expires_at ? new Date(lock.expires_at).getTime() < Date.now() : false;
@@ -77,10 +82,11 @@ export async function GET() {
         !!String(note.xes_after || '').trim() ||
         !!String(note.cim_ver || '').trim();
 
-      const status = lock ? (stale ? 'stale_lock' : 'locked') : hasData ? 'editable' : 'no_data';
+      const status = lock && !stale ? 'locked' : hasData ? 'editable' : 'no_data';
 
       return {
         noteId: note.id,
+        normalizedKey: key,
         file: buildSyntheticFileName(note.site, note.equipment),
         site: note.site,
         equipment: note.equipment,
@@ -92,6 +98,7 @@ export async function GET() {
         hasHistory: historyCount > 0,
         overviewCount,
         historyCount,
+        hasData,
         updatedAt: note.updated_at || '',
         status,
         lockUser: lock?.user_name || '',
@@ -99,6 +106,47 @@ export async function GET() {
         lockStale: stale,
       };
     });
+
+    // 같은 Site/Equipment가 중복 생성되어도 대시보드에서는 1장만 보이게 한다.
+    // 우선순위: 데이터가 있는 카드 > 최근 수정 카드.
+    const dedupedMap = new Map<string, typeof enrichedItems[number]>();
+    for (const item of enrichedItems) {
+      const previous = dedupedMap.get(item.normalizedKey);
+      if (!previous) {
+        dedupedMap.set(item.normalizedKey, item);
+        continue;
+      }
+
+      const previousTime = previous.updatedAt ? new Date(previous.updatedAt).getTime() : 0;
+      const currentTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+      const shouldReplace =
+        (item.hasData && !previous.hasData) ||
+        (item.hasData === previous.hasData && currentTime > previousTime);
+
+      if (shouldReplace) {
+        dedupedMap.set(item.normalizedKey, item);
+      }
+    }
+
+    const items = Array.from(dedupedMap.values()).map((item) => ({
+      noteId: item.noteId,
+      file: item.file,
+      site: item.site,
+      equipment: item.equipment,
+      date: item.date,
+      xeaAfter: item.xeaAfter,
+      xesAfter: item.xesAfter,
+      cimVer: item.cimVer,
+      hasOverview: item.hasOverview,
+      hasHistory: item.hasHistory,
+      overviewCount: item.overviewCount,
+      historyCount: item.historyCount,
+      updatedAt: item.updatedAt,
+      status: item.status,
+      lockUser: item.lockUser,
+      lockUpdatedAt: item.lockUpdatedAt,
+      lockStale: item.lockStale,
+    }));
 
     return Response.json({ ok: true, items });
   } catch (err) {

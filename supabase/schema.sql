@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS edit_locks (
   equipment   TEXT        NOT NULL,
   user_name   TEXT        NOT NULL DEFAULT '',
   locked_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  expires_at  TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '10 hours'),
+  expires_at  TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '10 minutes'),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -488,3 +488,18 @@ VALUES (
   '5335c1c78b99ea77b73cc03f735adc472835dc47c10e553d20f6e7ba338c0da3'
 )
 ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================
+-- 정규화 기준 중복 방지 보강
+-- ============================================================
+CREATE UNIQUE INDEX IF NOT EXISTS notes_site_equipment_normalized_key
+  ON notes (
+    UPPER(REGEXP_REPLACE(TRIM(site), '\s+', '_', 'g')),
+    UPPER(REGEXP_REPLACE(TRIM(equipment), '\s+', '', 'g'))
+  );
+
+CREATE UNIQUE INDEX IF NOT EXISTS edit_locks_site_equipment_normalized_key
+  ON edit_locks (
+    UPPER(REGEXP_REPLACE(TRIM(site), '\s+', '_', 'g')),
+    UPPER(REGEXP_REPLACE(TRIM(equipment), '\s+', '', 'g'))
+  );

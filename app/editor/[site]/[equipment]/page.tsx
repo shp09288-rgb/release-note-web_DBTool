@@ -144,6 +144,8 @@ useEffect(() => {
   window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalUser);
   setCurrentUser(finalUser);
 
+  let ownsLock = false;
+
   const acquire = async () => {
     try {
       const res = await fetch('/api/acquire-lock', {
@@ -164,20 +166,31 @@ useEffect(() => {
         } else {
           setLockMessage(`${finalUser} 사용자가 현재 편집 중입니다.`);
         }
+        ownsLock = true;
         setReadOnly(false);
       } else {
         const otherUser = result.lock?.user || '다른 사용자';
         setLockMessage(`${otherUser} 사용자가 현재 수정 중입니다. 읽기 전용으로 열립니다.`);
+        ownsLock = false;
         setReadOnly(true);
       }
     } catch (err) {
       console.error(err);
       setLockMessage('락 상태 확인 실패. 읽기 전용으로 전환합니다.');
+      ownsLock = false;
       setReadOnly(true);
     }
   };
 
   acquire();
+
+  // 편집 중인 사용자는 2분마다 락을 갱신한다.
+  // 락 만료 기준은 서버에서 10분으로 관리되므로, 브라우저/네트워크가 끊기면 최대 10분 뒤 자동 해제된다.
+  const heartbeatTimer = window.setInterval(() => {
+    if (ownsLock) {
+      acquire();
+    }
+  }, 1000 * 60 * 2);
 
   const handleBeforeUnload = () => {
     navigator.sendBeacon?.(
@@ -199,6 +212,7 @@ useEffect(() => {
 
   return () => {
     window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.clearInterval(heartbeatTimer);
 
     fetch('/api/release-lock', {
       method: 'POST',
