@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardActions } from '@/components/dashboard/dashboard-actions';
 import { DashboardEmptyState } from '@/components/dashboard/dashboard-empty-state';
@@ -13,6 +13,10 @@ import { EquipmentCard } from '@/components/dashboard/equipment-card';
 import { NoteModal } from '@/components/dashboard/note-modal';
 import type { Item, SortKey, StatusFilter } from '@/components/dashboard/types';
 import { matchesStatusFilter } from '@/components/dashboard/types';
+import { ChangePasswordModal } from '@/components/ui/change-password-modal';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { PasswordModal } from '@/components/ui/password-modal';
+import { TextInputModal } from '@/components/ui/text-input-modal';
 
 const USER_NAME_STORAGE_KEY = 'rn_user_name';
 
@@ -21,15 +25,13 @@ function normalizeUserName(value: string | null | undefined) {
   return trimmed || 'User01';
 }
 
-function getOrCreateUserName() {
-  const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
-  if (existing && existing.trim()) return existing.trim();
+type UserNameModalState =
+  | { open: false }
+  | { open: true; mode: 'initial' | 'change'; defaultValue: string };
 
-  const input = window.prompt('대시보드에서 사용할 이름을 입력하세요.', 'User01');
-  const finalName = normalizeUserName(input);
-  window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalName);
-  return finalName;
-}
+type PasswordRequestState = {
+  actionLabel: string;
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -48,6 +50,15 @@ export default function DashboardPage() {
   const [newSite, setNewSite] = useState('');
   const [newEquipment, setNewEquipment] = useState('');
   const [toast, setToast] = useState<ToastState>(null);
+
+  const [userNameModal, setUserNameModal] = useState<UserNameModalState>({ open: false });
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [changePasswordSubmitting, setChangePasswordSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
+  const [passwordModal, setPasswordModal] = useState<PasswordRequestState | null>(null);
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+
+  const passwordResolveRef = useRef<((password: string | null) => void) | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
@@ -82,38 +93,80 @@ export default function DashboardPage() {
     return !!result.verified;
   }
 
-  async function requestDashboardPassword(actionLabel: string) {
-    const password = window.prompt(`${actionLabel}하려면 비밀번호를 입력하세요.`, '');
-    if (password === null) return null;
+  const closePasswordModal = useCallback((password: string | null) => {
+    passwordResolveRef.current?.(password);
+    passwordResolveRef.current = null;
+    setPasswordModal(null);
+    setPasswordSubmitting(false);
+  }, []);
 
-    const verified = await verifyPassword(password);
-    if (!verified) {
-      showToast('비밀번호가 올바르지 않습니다.', 'error');
-      return null;
+  const requestDashboardPassword = useCallback((actionLabel: string) => {
+    return new Promise<string | null>((resolve) => {
+      passwordResolveRef.current = resolve;
+      setPasswordModal({ actionLabel });
+    });
+  }, []);
+
+  const handlePasswordModalSubmit = useCallback(
+    async (password: string) => {
+      if (!passwordModal) return;
+
+      setPasswordSubmitting(true);
+      const verified = await verifyPassword(password);
+      setPasswordSubmitting(false);
+
+      if (!verified) {
+        showToast('비밀번호가 올바르지 않습니다.', 'error');
+        return;
+      }
+
+      closePasswordModal(password);
+    },
+    [closePasswordModal, passwordModal, showToast]
+  );
+
+  const handlePasswordModalCancel = useCallback(() => {
+    closePasswordModal(null);
+  }, [closePasswordModal]);
+
+  const handleUserNameModalSubmit = useCallback(
+    (value: string) => {
+      const mode = userNameModal.open ? userNameModal.mode : 'initial';
+      const nextUser = normalizeUserName(value);
+      window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
+      setCurrentUser(nextUser);
+      setUserNameModal({ open: false });
+
+      if (mode === 'change') {
+        showToast(`사용자 이름이 '${nextUser}'(으)로 변경되었습니다.`, 'success');
+      }
+    },
+    [showToast, userNameModal]
+  );
+
+  const handleUserNameModalCancel = useCallback(() => {
+    if (userNameModal.open && userNameModal.mode === 'initial') {
+      const fallback = normalizeUserName('User01');
+      window.localStorage.setItem(USER_NAME_STORAGE_KEY, fallback);
+      setCurrentUser(fallback);
     }
-
-    return password;
-  }
+    setUserNameModal({ open: false });
+  }, [userNameModal]);
 
   function handleChangeUserName() {
-    const input = window.prompt('저장/편집 이력에 표시할 사용자 이름을 입력하세요.', currentUser || 'User01');
-    if (input === null) return;
-
-    const nextUser = normalizeUserName(input);
-    window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
-    setCurrentUser(nextUser);
-    showToast(`사용자 이름이 '${nextUser}'(으)로 변경되었습니다.`, 'success');
+    setUserNameModal({
+      open: true,
+      mode: 'change',
+      defaultValue: currentUser || 'User01',
+    });
   }
 
-  async function handleChangePassword() {
-    const currentPassword = window.prompt('현재 비밀번호를 입력하세요.', '');
-    if (currentPassword === null) return;
-
-    const newPassword = window.prompt('새 비밀번호를 입력하세요.', '');
-    if (newPassword === null) return;
-
-    const confirmPassword = window.prompt('새 비밀번호를 다시 입력하세요.', '');
-    if (confirmPassword === null) return;
+  async function handleChangePasswordSubmit(payload: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) {
+    const { currentPassword, newPassword, confirmPassword } = payload;
 
     if (!newPassword.trim()) {
       showToast('새 비밀번호를 비워둘 수 없습니다.', 'error');
@@ -125,19 +178,29 @@ export default function DashboardPage() {
       return;
     }
 
-    const res = await fetch('/api/dashboard-password/change', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    const result = await res.json();
+    setChangePasswordSubmitting(true);
 
-    if (!result.ok) {
-      showToast(result.message || '비밀번호 변경 실패', 'error');
-      return;
+    try {
+      const res = await fetch('/api/dashboard-password/change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const result = await res.json();
+
+      if (!result.ok) {
+        showToast(result.message || '비밀번호 변경 실패', 'error');
+        return;
+      }
+
+      showToast('비밀번호가 변경되었습니다.', 'success');
+      setShowChangePasswordModal(false);
+    } catch (err) {
+      console.error(err);
+      showToast('비밀번호 변경 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setChangePasswordSubmitting(false);
     }
-
-    showToast('비밀번호가 변경되었습니다.', 'success');
   }
 
   const handleEditClick = async (item: Item) => {
@@ -150,9 +213,15 @@ export default function DashboardPage() {
     setShowEditModal(true);
   };
 
-  const handleDeleteClick = async (item: Item) => {
-    const ok = window.confirm(`정말 삭제하시겠습니까?\n${item.site} / ${item.equipment}`);
-    if (!ok) return;
+  const handleDeleteClick = (item: Item) => {
+    setDeleteTarget(item);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const item = deleteTarget;
+    if (!item) return;
+
+    setDeleteTarget(null);
 
     const password = await requestDashboardPassword('카드를 삭제');
     if (!password) return;
@@ -260,8 +329,13 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    const userTimer = window.setTimeout(() => {
-      setCurrentUser(getOrCreateUserName());
+    const initTimer = window.setTimeout(() => {
+      const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
+      if (existing && existing.trim()) {
+        setCurrentUser(existing.trim());
+      } else {
+        setUserNameModal({ open: true, mode: 'initial', defaultValue: 'User01' });
+      }
     }, 0);
 
     const loadTimer = window.setTimeout(() => {
@@ -273,7 +347,7 @@ export default function DashboardPage() {
     }, 100000);
 
     return () => {
-      window.clearTimeout(userTimer);
+      window.clearTimeout(initTimer);
       window.clearTimeout(loadTimer);
       window.clearInterval(timer);
     };
@@ -341,7 +415,7 @@ export default function DashboardPage() {
         <DashboardHeader
           currentUser={currentUser}
           onChangeUserName={handleChangeUserName}
-          onChangePassword={handleChangePassword}
+          onChangePassword={() => setShowChangePasswordModal(true)}
         />
 
         <DashboardToolbar
@@ -420,6 +494,63 @@ export default function DashboardPage() {
         }}
         onSubmit={handleSaveEdit}
         submitLabel="저장"
+      />
+
+      <TextInputModal
+        open={userNameModal.open}
+        title={
+          userNameModal.open && userNameModal.mode === 'initial'
+            ? '사용자 이름 설정'
+            : '사용자 이름 변경'
+        }
+        description={
+          userNameModal.open && userNameModal.mode === 'initial'
+            ? '대시보드에서 사용할 이름을 입력하세요.'
+            : '저장/편집 이력에 표시할 사용자 이름을 입력하세요.'
+        }
+        label="사용자 이름"
+        defaultValue={userNameModal.open ? userNameModal.defaultValue : 'User01'}
+        placeholder="예: User01"
+        submitLabel="확인"
+        onSubmit={handleUserNameModalSubmit}
+        onCancel={handleUserNameModalCancel}
+      />
+
+      <PasswordModal
+        open={!!passwordModal}
+        title="비밀번호 확인"
+        description={passwordModal ? `${passwordModal.actionLabel}하려면 비밀번호를 입력하세요.` : ''}
+        actionLabel={passwordModal?.actionLabel || ''}
+        submitting={passwordSubmitting}
+        onSubmit={handlePasswordModalSubmit}
+        onCancel={handlePasswordModalCancel}
+      />
+
+      <ChangePasswordModal
+        open={showChangePasswordModal}
+        submitting={changePasswordSubmitting}
+        onSubmit={handleChangePasswordSubmit}
+        onCancel={() => {
+          if (!changePasswordSubmitting) setShowChangePasswordModal(false);
+        }}
+      />
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="카드 삭제"
+        description="정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        variant="danger"
+        highlight={
+          deleteTarget
+            ? {
+                label: '삭제 대상',
+                value: `${deleteTarget.site} / ${deleteTarget.equipment}`,
+              }
+            : undefined
+        }
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setDeleteTarget(null)}
       />
 
       <DashboardToast toast={toast} onDismiss={dismissToast} />

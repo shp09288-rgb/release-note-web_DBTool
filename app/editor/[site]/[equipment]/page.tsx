@@ -34,6 +34,8 @@ import {
   type SectionKey,
 } from '@/components/editor/types';
 import { clearReleaseNoteDraft, type ReleaseNoteDraft } from '@/lib/release-note-draft';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { TextInputModal } from '@/components/ui/text-input-modal';
 
 interface Props {
   params: Promise<{
@@ -70,6 +72,12 @@ export default function EditorPage({ params }: Props) {
   const [toast, setToast] = useState<ToastState>(null);
   const [mobileViewMode, setMobileViewMode] = useState<EditorViewMode>('edit');
   const [serverLoadComplete, setServerLoadComplete] = useState(false);
+  const [userNameInitialized, setUserNameInitialized] = useState(false);
+  const [showNewDocumentConfirm, setShowNewDocumentConfirm] = useState(false);
+  const [userNameModal, setUserNameModal] = useState<
+    | { open: false }
+    | { open: true; mode: 'initial' | 'change'; defaultValue: string }
+  >({ open: false });
 
   const showToast = useCallback((message: string, type: NonNullable<ToastState>['type']) => {
     setToast({ message, type });
@@ -119,13 +127,21 @@ export default function EditorPage({ params }: Props) {
   }, [site, equipment]);
 
   useEffect(() => {
-    const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
-    const finalUser =
-      existing && existing.trim()
-        ? existing.trim()
-        : normalizeUserName(window.prompt('에디터에서 사용할 이름을 입력하세요.', 'User01'));
+    const initTimer = window.setTimeout(() => {
+      const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
+      if (existing && existing.trim()) {
+        setCurrentUser(existing.trim());
+        setUserNameInitialized(true);
+      } else {
+        setUserNameModal({ open: true, mode: 'initial', defaultValue: 'User01' });
+      }
+    }, 0);
 
-    window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalUser);
+    return () => window.clearTimeout(initTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!userNameInitialized || !currentUser) return;
 
     let ownsLock = false;
 
@@ -134,16 +150,16 @@ export default function EditorPage({ params }: Props) {
         const res = await fetch('/api/acquire-lock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ site, equipment, user: finalUser }),
+          body: JSON.stringify({ site, equipment, user: currentUser }),
         });
 
         const result = await res.json();
 
         if (result.ok && result.acquired) {
           if (result.takenOver) {
-            setLockMessage(`기존 stale lock을 ${finalUser} 사용자가 인계받았습니다.`);
+            setLockMessage(`기존 stale lock을 ${currentUser} 사용자가 인계받았습니다.`);
           } else {
-            setLockMessage(`${finalUser} 사용자가 현재 편집 중입니다.`);
+            setLockMessage(`${currentUser} 사용자가 현재 편집 중입니다.`);
           }
           ownsLock = true;
           setReadOnly(false);
@@ -162,7 +178,6 @@ export default function EditorPage({ params }: Props) {
     };
 
     const initTimer = window.setTimeout(() => {
-      setCurrentUser(finalUser);
       acquire();
     }, 0);
 
@@ -175,7 +190,7 @@ export default function EditorPage({ params }: Props) {
     const handleBeforeUnload = () => {
       navigator.sendBeacon?.(
         '/api/release-lock',
-        new Blob([JSON.stringify({ site, equipment, user: finalUser })], {
+        new Blob([JSON.stringify({ site, equipment, user: currentUser })], {
           type: 'application/json',
         })
       );
@@ -191,26 +206,48 @@ export default function EditorPage({ params }: Props) {
       fetch('/api/release-lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ site, equipment, user: finalUser }),
+        body: JSON.stringify({ site, equipment, user: currentUser }),
         keepalive: true,
       }).catch(() => {});
     };
-  }, [site, equipment]);
+  }, [site, equipment, userNameInitialized, currentUser]);
+
+  const handleUserNameModalSubmit = useCallback(
+    (value: string) => {
+      const mode = userNameModal.open ? userNameModal.mode : 'initial';
+      const nextUser = normalizeUserName(value);
+      window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
+      setCurrentUser(nextUser);
+      setUserNameModal({ open: false });
+
+      if (mode === 'initial') {
+        setUserNameInitialized(true);
+      } else {
+        showToast(
+          `사용자 이름이 '${nextUser}'(으)로 변경되었습니다. 이미 잡힌 편집 락은 페이지를 다시 열면 새 이름으로 갱신됩니다.`,
+          'info'
+        );
+      }
+    },
+    [showToast, userNameModal]
+  );
+
+  const handleUserNameModalCancel = useCallback(() => {
+    if (userNameModal.open && userNameModal.mode === 'initial') {
+      const fallback = normalizeUserName('User01');
+      window.localStorage.setItem(USER_NAME_STORAGE_KEY, fallback);
+      setCurrentUser(fallback);
+      setUserNameInitialized(true);
+    }
+    setUserNameModal({ open: false });
+  }, [userNameModal]);
 
   const handleChangeUserName = () => {
-    const input = window.prompt(
-      '저장/편집 이력에 표시할 사용자 이름을 입력하세요.',
-      currentUser || 'User01'
-    );
-    if (input === null) return;
-
-    const nextUser = normalizeUserName(input);
-    window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
-    setCurrentUser(nextUser);
-    showToast(
-      `사용자 이름이 '${nextUser}'(으)로 변경되었습니다. 이미 잡힌 편집 락은 페이지를 다시 열면 새 이름으로 갱신됩니다.`,
-      'info'
-    );
+    setUserNameModal({
+      open: true,
+      mode: 'change',
+      defaultValue: currentUser || 'User01',
+    });
   };
 
   const saveCurrent = async () => {
@@ -366,8 +403,11 @@ export default function EditorPage({ params }: Props) {
       return;
     }
 
-    const ok = window.confirm('현재 내용을 업데이트 이력에 추가하고 새 문서를 시작하시겠습니까?');
-    if (!ok) return;
+    setShowNewDocumentConfirm(true);
+  };
+
+  const executeNewDocument = () => {
+    setShowNewDocumentConfirm(false);
 
     if (hasMeaningfulContent()) {
       const snapshot = buildHistorySnapshot();
@@ -738,6 +778,35 @@ export default function EditorPage({ params }: Props) {
         equipment={equipment}
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
+      />
+
+      <TextInputModal
+        open={userNameModal.open}
+        title={
+          userNameModal.open && userNameModal.mode === 'initial'
+            ? '사용자 이름 설정'
+            : '사용자 이름 변경'
+        }
+        description={
+          userNameModal.open && userNameModal.mode === 'initial'
+            ? '에디터에서 사용할 이름을 입력하세요.'
+            : '저장/편집 이력에 표시할 사용자 이름을 입력하세요.'
+        }
+        label="사용자 이름"
+        defaultValue={userNameModal.open ? userNameModal.defaultValue : 'User01'}
+        placeholder="예: User01"
+        submitLabel="확인"
+        onSubmit={handleUserNameModalSubmit}
+        onCancel={handleUserNameModalCancel}
+      />
+
+      <ConfirmModal
+        open={showNewDocumentConfirm}
+        title="새 문서 시작"
+        description="현재 내용을 업데이트 이력에 추가하고 새 문서를 시작하시겠습니까?"
+        confirmLabel="새 문서 시작"
+        onConfirm={executeNewDocument}
+        onCancel={() => setShowNewDocumentConfirm(false)}
       />
     </div>
   );
