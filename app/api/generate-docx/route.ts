@@ -1,4 +1,11 @@
 import JSZip from 'jszip';
+import {
+  buildHistoryVersionLines,
+  getCategoryColorHex,
+  getNoteIconColorHex,
+  splitLines,
+  TEST_VERSION_RANGE,
+} from '@/lib/release-note-document-model';
 
 interface DetailRow {
   ref: string;
@@ -28,15 +35,12 @@ const PT20 = 40; // 20pt
 
 const NAVY = '1B3A6B';
 const NAVYL = '2E5FA3';
-const ACC = '4472C4';
 const GHEAD = 'D9E1F2';
 const GALT = 'F2F4FB';
 const WHITE = 'FFFFFF';
 const BLACK = '000000';
-const RED = 'C00000';
 const AMBER = 'ED7D31';
 const GREEN_D = '375623';
-const PURP = '7030A0';
 const BORDER = 'AAAAAA';
 const FONT = 'Arial';
 
@@ -46,14 +50,6 @@ function xe(s: unknown) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function splitLines(s: unknown) {
-  return String(s ?? '')
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map((v) => v.trim())
-    .filter(Boolean);
 }
 
 function rpr({
@@ -210,16 +206,6 @@ function secTitle(text: string) {
 
 function spacer() {
   return para(run(''), { before: 40, after: 20 });
-}
-
-function catColor(c: string) {
-  return c === 'New Feature'
-    ? ACC
-    : c === 'Test Version'
-    ? PURP
-    : c === 'Improvement'
-    ? '00703C'
-    : RED;
 }
 
 function buildHeader(data: {
@@ -496,7 +482,7 @@ function buildSysDetail(
         tc(
           CW[1],
           bg,
-          para(run(d.category || '-', { bold: true, color: catColor(d.category), size: PT10 }), {
+          para(run(d.category || '-', { bold: true, color: getCategoryColorHex(d.category), size: PT10 }), {
             align: 'center',
             before: 20,
             after: 20,
@@ -546,7 +532,7 @@ function buildNotes(items: NoteRow[]) {
                           (idx === 0
                             ? run(`[${n.icon}]  `, {
                                 bold: true,
-                                color: n.icon === '!' ? RED : NAVY,
+                                color: getNoteIconColorHex(n.icon),
                                 size: PT10,
                               })
                             : run('   ', { size: PT10 })) + run(line, { size: PT10 }),
@@ -608,10 +594,7 @@ function buildHistory(items: HistoryRow[]) {
         const bg = i === 0 ? GHEAD : i % 2 === 0 ? WHITE : GALT;
         const isTop = i === 0;
 
-        const versionLines: string[] = [];
-        if (h.xea && h.xea !== '-') versionLines.push(`XEA ${h.xea}`);
-        if (h.xes && h.xes !== '-') versionLines.push(`XES ${h.xes}`);
-        if (h.cim && h.cim !== '-') versionLines.push(`CIM ${h.cim}`);
+        const versionLines = buildHistoryVersionLines(h);
 
         const versionBody =
           versionLines.length > 0
@@ -736,7 +719,7 @@ function buildDocXml(data: {
           })
         : ''
     }
-    ${buildSysDetail('Test Version', data.testVersions, 'Export', 'Verified')}
+    ${buildSysDetail('Test Version', data.testVersions, TEST_VERSION_RANGE.before, TEST_VERSION_RANGE.after)}
     ${spacer()}${spacer()}
     ${secTitle('4.  Important Notes')}
     ${spacer()}
