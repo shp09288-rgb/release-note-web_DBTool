@@ -3,7 +3,7 @@ import {
   buildHistoryVersionLines,
   formatEmpty,
   splitLines,
-} from '@/lib/release-note-preview-utils';
+} from '@/lib/release-note-document-model';
 import {
   previewTableClass,
   previewTdClass,

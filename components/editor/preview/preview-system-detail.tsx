@@ -1,5 +1,5 @@
 import type { DetailRow } from '@/components/editor/types';
-import { formatEmpty, getCategoryColorClass, splitLines } from '@/lib/release-note-preview-utils';
+import { formatEmpty, getCategoryColorClass, splitLines } from '@/lib/release-note-document-model';
 import {
   previewTableClass,
   previewTdClass,

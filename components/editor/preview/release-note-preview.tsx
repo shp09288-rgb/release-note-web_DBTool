@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ReleaseNotePreviewData } from '@/components/editor/preview/preview-types';
 import { getPrimaryPreviewSection } from '@/components/editor/preview/preview-types';
 import type { SectionKey } from '@/components/editor/types';
@@ -14,6 +14,7 @@ import {
   PreviewSubTitle,
 } from '@/components/editor/preview/preview-section-block';
 import { PreviewSystemDetail } from '@/components/editor/preview/preview-system-detail';
+import { buildDocumentSections } from '@/lib/release-note-document-model';
 
 type ReleaseNotePreviewProps = {
   data: ReleaseNotePreviewData;
@@ -27,6 +28,7 @@ export function ReleaseNotePreview({
   scrollToActiveSection = false,
 }: ReleaseNotePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const sections = useMemo(() => buildDocumentSections(data), [data]);
 
   useEffect(() => {
     if (!scrollToActiveSection) return;
@@ -46,70 +48,89 @@ export function ReleaseNotePreview({
 
   return (
     <div ref={containerRef} className="space-y-4 text-slate-800">
-      <PreviewSectionBlock sectionId="header" activeSection={activeSection}>
-        <PreviewHeader
-          site={data.site}
-          date={data.date}
-          xeaBefore={data.xeaBefore}
-          xeaAfter={data.xeaAfter}
-          xesBefore={data.xesBefore}
-          xesAfter={data.xesAfter}
-          cimVer={data.cimVer}
-        />
-      </PreviewSectionBlock>
+      {sections.map((section) => {
+        switch (section.kind) {
+          case 'header':
+            return (
+              <PreviewSectionBlock
+                key={section.id}
+                sectionId={section.id}
+                activeSection={activeSection}
+              >
+                <PreviewHeader payload={section.payload} />
+              </PreviewSectionBlock>
+            );
 
-      <PreviewSectionBlock sectionId="overview" activeSection={activeSection}>
-        <PreviewSectionTitle>1. Release Overview</PreviewSectionTitle>
-        <PreviewOverview overview={data.overview} />
-      </PreviewSectionBlock>
+          case 'overview':
+            return (
+              <PreviewSectionBlock
+                key={section.id}
+                sectionId={section.id}
+                activeSection={activeSection}
+              >
+                <PreviewSectionTitle>{section.sectionTitle}</PreviewSectionTitle>
+                <PreviewOverview items={section.payload.items} />
+              </PreviewSectionBlock>
+            );
 
-      <PreviewSectionBlock sectionId="xea" activeSection={activeSection} className="space-y-3">
-        <PreviewSectionTitle>2. System Detail</PreviewSectionTitle>
-        {data.xeaDetails.length > 0 ? (
-          <PreviewSubTitle>2.1 XEA</PreviewSubTitle>
-        ) : null}
-        <PreviewSystemDetail
-          label="XEA"
-          items={data.xeaDetails}
-          before={data.xeaBefore}
-          after={data.xeaAfter}
-        />
-      </PreviewSectionBlock>
+          case 'systemDetail':
+            return (
+              <PreviewSectionBlock
+                key={section.id}
+                sectionId={section.id}
+                activeSection={activeSection}
+                className={section.id === 'xea' ? 'space-y-3' : undefined}
+              >
+                {section.sectionTitle ? (
+                  <PreviewSectionTitle>{section.sectionTitle}</PreviewSectionTitle>
+                ) : null}
+                {section.subTitle ? (
+                  <PreviewSubTitle>{section.subTitle}</PreviewSubTitle>
+                ) : null}
+                {section.hasContent ? (
+                  <PreviewSystemDetail
+                    label={section.payload.label}
+                    items={section.payload.items}
+                    before={section.payload.before}
+                    after={section.payload.after}
+                  />
+                ) : null}
+              </PreviewSectionBlock>
+            );
 
-      <PreviewSectionBlock sectionId="xes" activeSection={activeSection}>
-        {data.xesDetails.length > 0 ? <PreviewSubTitle>2.2 XES</PreviewSubTitle> : null}
-        <PreviewSystemDetail
-          label="XES"
-          items={data.xesDetails}
-          before={data.xesBefore}
-          after={data.xesAfter}
-        />
-      </PreviewSectionBlock>
+          case 'notes':
+            return (
+              <PreviewSectionBlock
+                key={section.id}
+                sectionId={section.id}
+                activeSection={activeSection}
+              >
+                <PreviewSectionTitle>{section.sectionTitle}</PreviewSectionTitle>
+                <PreviewNotes items={section.payload.items} />
+              </PreviewSectionBlock>
+            );
 
-      <PreviewSectionBlock sectionId="test" activeSection={activeSection}>
-        {data.testVersions.length > 0 ? (
-          <PreviewSubTitle>2.3 Test Version</PreviewSubTitle>
-        ) : null}
-        <PreviewSystemDetail
-          label="Test Version"
-          items={data.testVersions}
-          before="Export"
-          after="Verified"
-        />
-      </PreviewSectionBlock>
+          case 'history':
+            return (
+              <PreviewSectionBlock
+                key={section.id}
+                sectionId={section.id}
+                activeSection={activeSection}
+              >
+                <PreviewSectionTitle>{section.sectionTitle}</PreviewSectionTitle>
+                <PreviewHistory history={section.payload.items} />
+                {section.footnote ? (
+                  <p className="mt-2 text-[10px] text-slate-500 sm:text-xs">
+                    {section.footnote}
+                  </p>
+                ) : null}
+              </PreviewSectionBlock>
+            );
 
-      <PreviewSectionBlock sectionId="notes" activeSection={activeSection}>
-        <PreviewSectionTitle>4. Important Notes</PreviewSectionTitle>
-        <PreviewNotes notes={data.notes} />
-      </PreviewSectionBlock>
-
-      <PreviewSectionBlock sectionId="history" activeSection={activeSection}>
-        <PreviewSectionTitle>5. SW Update History</PreviewSectionTitle>
-        <PreviewHistory history={data.history} />
-        <p className="mt-2 text-[10px] text-slate-500 sm:text-xs">
-          ※ 최신 버전이 상단에 표시됩니다.
-        </p>
-      </PreviewSectionBlock>
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }

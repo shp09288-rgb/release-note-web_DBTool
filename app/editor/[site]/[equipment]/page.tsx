@@ -19,6 +19,7 @@ import type {
   EditorViewMode,
   ReleaseNotePreviewData,
 } from '@/components/editor/preview/preview-types';
+import { normalizeReleaseNoteDocument } from '@/lib/release-note-document-model';
 import { BasicInfoSection } from '@/components/editor/sections/basic-info-section';
 import { DetailTableSection } from '@/components/editor/sections/detail-table-section';
 import { GenerateSection } from '@/components/editor/sections/generate-section';
@@ -509,24 +510,25 @@ export default function EditorPage({ params }: Props) {
   );
 
   const previewData = useMemo<ReleaseNotePreviewData>(
-    () => ({
-      site: displaySite,
-      equipment,
-      date,
-      xeaBefore,
-      xeaAfter,
-      xesBefore,
-      xesAfter,
-      cimVer,
-      overview,
-      xeaDetails,
-      xesDetails,
-      testVersions,
-      notes,
-      history,
-    }),
+    () =>
+      normalizeReleaseNoteDocument({
+        site,
+        equipment,
+        date,
+        xeaBefore,
+        xeaAfter,
+        xesBefore,
+        xesAfter,
+        cimVer,
+        overview,
+        xeaDetails,
+        xesDetails,
+        testVersions,
+        notes,
+        history,
+      }),
     [
-      displaySite,
+      site,
       equipment,
       date,
       xeaBefore,

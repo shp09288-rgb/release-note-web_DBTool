@@ -1,16 +1,14 @@
-import { formatEmpty } from '@/lib/release-note-preview-utils';
+import { formatEmpty } from '@/lib/release-note-document-model';
 import {
   previewTableClass,
   previewTdClass,
 } from '@/components/editor/preview/preview-section-block';
 
 type PreviewOverviewProps = {
-  overview: string[];
+  items: string[];
 };
 
-export function PreviewOverview({ overview }: PreviewOverviewProps) {
-  const items = overview.length > 0 ? overview : [''];
-
+export function PreviewOverview({ items }: PreviewOverviewProps) {
   return (
     <table className={previewTableClass}>
       <tbody>
