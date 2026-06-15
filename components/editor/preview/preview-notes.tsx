@@ -1,17 +1,15 @@
 import type { NoteRow } from '@/components/editor/types';
-import { getNoteIconClass, splitLines } from '@/lib/release-note-preview-utils';
+import { getNoteIconClass, splitLines } from '@/lib/release-note-document-model';
 import {
   previewTableClass,
   previewTdClass,
 } from '@/components/editor/preview/preview-section-block';
 
 type PreviewNotesProps = {
-  notes: NoteRow[];
+  items: NoteRow[];
 };
 
-export function PreviewNotes({ notes }: PreviewNotesProps) {
-  const items = notes.length > 0 ? notes : [{ icon: '!' as const, text: '' }];
-
+export function PreviewNotes({ items }: PreviewNotesProps) {
   return (
     <table className={previewTableClass}>
       <tbody>

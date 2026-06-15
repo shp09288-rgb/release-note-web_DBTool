@@ -1,30 +1,12 @@
-import type { DetailRow, HistoryRow, NoteRow, SectionKey } from '@/components/editor/types';
+import type { SectionKey } from '@/components/editor/types';
+import type {
+  DocumentSectionId,
+  ReleaseNoteDocument,
+} from '@/lib/release-note-document-model';
 
-export interface ReleaseNotePreviewData {
-  site: string;
-  equipment: string;
-  date: string;
-  xeaBefore: string;
-  xeaAfter: string;
-  xesBefore: string;
-  xesAfter: string;
-  cimVer: string;
-  overview: string[];
-  xeaDetails: DetailRow[];
-  xesDetails: DetailRow[];
-  testVersions: DetailRow[];
-  notes: NoteRow[];
-  history: HistoryRow[];
-}
+export type ReleaseNotePreviewData = ReleaseNoteDocument;
 
-export type PreviewSectionId =
-  | 'header'
-  | 'overview'
-  | 'xea'
-  | 'xes'
-  | 'test'
-  | 'notes'
-  | 'history';
+export type PreviewSectionId = DocumentSectionId;
 
 export function getHighlightedSections(activeSection: SectionKey): PreviewSectionId[] {
   switch (activeSection) {

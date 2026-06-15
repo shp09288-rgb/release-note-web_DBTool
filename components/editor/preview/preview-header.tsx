@@ -1,25 +1,18 @@
-import type { ReleaseNotePreviewData } from '@/components/editor/preview/preview-types';
-import { formatEmpty, targetSystemLabel } from '@/lib/release-note-preview-utils';
+import type { HeaderSectionPayload } from '@/lib/release-note-document-model';
+import { formatEmpty } from '@/lib/release-note-document-model';
 import {
   previewTableClass,
   previewTdClass,
   previewThNavyClass,
 } from '@/components/editor/preview/preview-section-block';
 
-type PreviewHeaderProps = Pick<
-  ReleaseNotePreviewData,
-  'site' | 'date' | 'xeaBefore' | 'xeaAfter' | 'xesBefore' | 'xesAfter' | 'cimVer'
->;
+type PreviewHeaderProps = {
+  payload: HeaderSectionPayload;
+};
 
-export function PreviewHeader({
-  site,
-  date,
-  xeaBefore,
-  xeaAfter,
-  xesBefore,
-  xesAfter,
-  cimVer,
-}: PreviewHeaderProps) {
+export function PreviewHeader({ payload }: PreviewHeaderProps) {
+  const { site, date, xeaBefore, xeaAfter, xesBefore, xesAfter, targetSystem } = payload;
+
   const rows: { label: string; value: React.ReactNode }[] = [
     { label: 'Site', value: formatEmpty(site) },
     { label: 'Release Date', value: formatEmpty(date) },
@@ -43,7 +36,7 @@ export function PreviewHeader({
         </>
       ),
     },
-    { label: 'Target System', value: targetSystemLabel(cimVer) },
+    { label: 'Target System', value: targetSystem },
   ];
 
   return (
