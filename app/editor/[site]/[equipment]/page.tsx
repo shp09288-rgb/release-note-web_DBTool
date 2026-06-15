@@ -1,12 +1,23 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardToast, type ToastState } from '@/components/dashboard/dashboard-toast';
 import { EditorHeader } from '@/components/editor/editor-header';
 import { EditorMobileNav } from '@/components/editor/editor-mobile-nav';
 import { EditorSidebar } from '@/components/editor/editor-sidebar';
 import { LockStatusBanner } from '@/components/editor/lock-status-banner';
+import {
+  PreviewLayout,
+} from '@/components/editor/preview/preview-layout';
+import {
+  usePreviewCollapsed,
+  usePreviewPanelWidth,
+} from '@/components/editor/preview/preview-panel';
+import type {
+  EditorViewMode,
+  ReleaseNotePreviewData,
+} from '@/components/editor/preview/preview-types';
 import { BasicInfoSection } from '@/components/editor/sections/basic-info-section';
 import { DetailTableSection } from '@/components/editor/sections/detail-table-section';
 import { GenerateSection } from '@/components/editor/sections/generate-section';
@@ -54,6 +65,7 @@ export default function EditorPage({ params }: Props) {
   // Reserved for future unsaved-changes UX; toggled on edits and after save.
   const [, setIsDirty] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
+  const [mobileViewMode, setMobileViewMode] = useState<EditorViewMode>('edit');
 
   const showToast = useCallback((message: string, type: NonNullable<ToastState>['type']) => {
     setToast({ message, type });
@@ -436,8 +448,58 @@ export default function EditorPage({ params }: Props) {
     setHistory((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const { previewWidthPct, handleResize } = usePreviewPanelWidth();
+  const { collapsed: previewCollapsed, toggleCollapsed, expandPreview } = usePreviewCollapsed();
+
+  const handleSectionChange = useCallback(
+    (section: SectionKey) => {
+      setActiveSection(section);
+      if (section === 'generate') {
+        expandPreview();
+      }
+    },
+    [expandPreview]
+  );
+
+  const previewData = useMemo<ReleaseNotePreviewData>(
+    () => ({
+      site: displaySite,
+      equipment,
+      date,
+      xeaBefore,
+      xeaAfter,
+      xesBefore,
+      xesAfter,
+      cimVer,
+      overview,
+      xeaDetails,
+      xesDetails,
+      testVersions,
+      notes,
+      history,
+    }),
+    [
+      displaySite,
+      equipment,
+      date,
+      xeaBefore,
+      xeaAfter,
+      xesBefore,
+      xesAfter,
+      cimVer,
+      overview,
+      xeaDetails,
+      xesDetails,
+      testVersions,
+      notes,
+      history,
+    ]
+  );
+
+  const editorWidthPct = 100 - previewWidthPct;
+
   return (
-    <div className="min-h-screen bg-park-surface text-slate-800">
+    <div className="flex min-h-screen flex-col bg-park-surface text-slate-800">
       <EditorHeader
         displaySite={displaySite}
         equipment={equipment}
@@ -451,11 +513,21 @@ export default function EditorPage({ params }: Props) {
 
       <LockStatusBanner message={lockMessage} readOnly={readOnly} />
 
-      <div className="mx-auto flex max-w-[1600px] flex-col lg:flex-row">
-        <EditorSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-        <EditorMobileNav activeSection={activeSection} onSectionChange={setActiveSection} />
+      <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col lg:flex-row">
+        <EditorSidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
+        <EditorMobileNav activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-        <main className="min-w-0 flex-1 p-4 pb-28 sm:p-6 lg:pb-6">
+        <PreviewLayout
+          activeSection={activeSection}
+          previewData={previewData}
+          previewWidthPct={previewWidthPct}
+          editorWidthPct={editorWidthPct}
+          onResize={handleResize}
+          mobileViewMode={mobileViewMode}
+          onMobileViewModeChange={setMobileViewMode}
+          previewCollapsed={previewCollapsed}
+          onTogglePreviewCollapse={toggleCollapsed}
+        >
           {activeSection === 'basic' && (
             <BasicInfoSection
               readOnly={readOnly}
@@ -495,7 +567,7 @@ export default function EditorPage({ params }: Props) {
               onAddOverview={addOverviewRow}
               onRemoveOverview={removeOverviewRow}
               onSave={saveCurrent}
-              onNext={() => setActiveSection('xea')}
+              onNext={() => handleSectionChange('xea')}
             />
           )}
 
@@ -509,8 +581,8 @@ export default function EditorPage({ params }: Props) {
               onUpdate={(index, field, value) => updateDetailRow(setXeaDetails, index, field, value)}
               onRemove={(index) => removeDetailRow(setXeaDetails, index)}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('basic')}
-              onNext={() => setActiveSection('xes')}
+              onPrev={() => handleSectionChange('basic')}
+              onNext={() => handleSectionChange('xes')}
             />
           )}
 
@@ -524,8 +596,8 @@ export default function EditorPage({ params }: Props) {
               onUpdate={(index, field, value) => updateDetailRow(setXesDetails, index, field, value)}
               onRemove={(index) => removeDetailRow(setXesDetails, index)}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('xea')}
-              onNext={() => setActiveSection('test')}
+              onPrev={() => handleSectionChange('xea')}
+              onNext={() => handleSectionChange('test')}
             />
           )}
 
@@ -542,8 +614,8 @@ export default function EditorPage({ params }: Props) {
               onUpdate={(index, field, value) => updateDetailRow(setTestVersions, index, field, value)}
               onRemove={(index) => removeDetailRow(setTestVersions, index)}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('xes')}
-              onNext={() => setActiveSection('notes')}
+              onPrev={() => handleSectionChange('xes')}
+              onNext={() => handleSectionChange('notes')}
             />
           )}
 
@@ -555,8 +627,8 @@ export default function EditorPage({ params }: Props) {
               onUpdate={updateNoteRow}
               onRemove={removeNoteRow}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('test')}
-              onNext={() => setActiveSection('history')}
+              onPrev={() => handleSectionChange('test')}
+              onNext={() => handleSectionChange('history')}
             />
           )}
 
@@ -568,8 +640,8 @@ export default function EditorPage({ params }: Props) {
               onUpdate={updateHistoryRow}
               onRemove={removeHistoryRow}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('notes')}
-              onNext={() => setActiveSection('generate')}
+              onPrev={() => handleSectionChange('notes')}
+              onNext={() => handleSectionChange('generate')}
             />
           )}
 
@@ -577,11 +649,11 @@ export default function EditorPage({ params }: Props) {
             <GenerateSection
               readOnly={readOnly}
               onSave={saveCurrent}
-              onPrev={() => setActiveSection('history')}
+              onPrev={() => handleSectionChange('history')}
               onDownloadDocx={downloadDocx}
             />
           )}
-        </main>
+        </PreviewLayout>
       </div>
 
       <DashboardToast toast={toast} onDismiss={dismissToast} />
