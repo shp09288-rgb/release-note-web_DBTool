@@ -29,3 +29,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media (min-width: 1280px) {
+  .editor-main-panel {
+    width: var(--editor-width-pct, 50%);
+  }
+
+  .preview-desktop-panel {
+    width: var(--preview-width-pct, 50%);
+  }
+}
