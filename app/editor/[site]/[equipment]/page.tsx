@@ -1,9 +1,25 @@
 'use client';
 
-import { use, useEffect, useState, useMemo, type CSSProperties } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { use, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DashboardToast, type ToastState } from '@/components/dashboard/dashboard-toast';
+import { EditorHeader } from '@/components/editor/editor-header';
+import { EditorMobileNav } from '@/components/editor/editor-mobile-nav';
+import { EditorSidebar } from '@/components/editor/editor-sidebar';
+import { LockStatusBanner } from '@/components/editor/lock-status-banner';
+import { BasicInfoSection } from '@/components/editor/sections/basic-info-section';
+import { DetailTableSection } from '@/components/editor/sections/detail-table-section';
+import { GenerateSection } from '@/components/editor/sections/generate-section';
+import { HistorySection } from '@/components/editor/sections/history-section';
+import { NotesSection } from '@/components/editor/sections/notes-section';
+import {
+  normalizeUserName,
+  USER_NAME_STORAGE_KEY,
+  type DetailRow,
+  type HistoryRow,
+  type NoteRow,
+  type SectionKey,
+} from '@/components/editor/types';
 
 interface Props {
   params: Promise<{
@@ -12,54 +28,14 @@ interface Props {
   }>;
 }
 
-type SectionKey =
-  | 'basic'
-  | 'xea'
-  | 'xes'
-  | 'test'
-  | 'notes'
-  | 'history'
-  | 'generate';
-
-type DetailCategory = 'New Feature' | 'Improvement' | 'Bug Fix';
-
-interface DetailRow {
-  ref: string;
-  category: DetailCategory;
-  title: string;
-  desc: string;
-}
-
-interface NoteRow {
-  icon: '!' | 'i';
-  text: string;
-}
-
-interface HistoryRow {
-  date: string;
-  xea: string;
-  xes: string;
-  cim: string;
-  summary: string;
-}
-
-const USER_NAME_STORAGE_KEY = 'rn_user_name';
-
-function normalizeUserName(value: string | null | undefined) {
-  const trimmed = String(value || '').trim();
-  return trimmed || 'User01';
-}
-
 export default function EditorPage({ params }: Props) {
   const router = useRouter();
-
   const raw = use(params);
   const site = decodeURIComponent(raw.site);
   const equipment = decodeURIComponent(raw.equipment);
   const displaySite = site.replace(/_/g, ' ');
-  
-  const [activeSection, setActiveSection] = useState<SectionKey>('basic');
 
+  const [activeSection, setActiveSection] = useState<SectionKey>('basic');
   const [date, setDate] = useState('');
   const [xeaBefore, setXeaBefore] = useState('');
   const [xeaAfter, setXeaAfter] = useState('');
@@ -67,7 +43,6 @@ export default function EditorPage({ params }: Props) {
   const [xesAfter, setXesAfter] = useState('');
   const [cimVer, setCimVer] = useState('');
   const [overview, setOverview] = useState<string[]>(['']);
-
   const [xeaDetails, setXeaDetails] = useState<DetailRow[]>([]);
   const [xesDetails, setXesDetails] = useState<DetailRow[]>([]);
   const [testVersions, setTestVersions] = useState<DetailRow[]>([]);
@@ -76,7 +51,17 @@ export default function EditorPage({ params }: Props) {
   const [currentUser, setCurrentUser] = useState('');
   const [lockMessage, setLockMessage] = useState('');
   const [readOnly, setReadOnly] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  // Reserved for future unsaved-changes UX; toggled on edits and after save.
+  const [, setIsDirty] = useState(false);
+  const [toast, setToast] = useState<ToastState>(null);
+
+  const showToast = useCallback((message: string, type: NonNullable<ToastState>['type']) => {
+    setToast({ message, type });
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -84,12 +69,8 @@ export default function EditorPage({ params }: Props) {
         const res = await fetch('/api/load-note', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            site,
-            equipment,
-          }),
+          body: JSON.stringify({ site, equipment }),
         });
-  
 
         const result = await res.json();
 
@@ -100,32 +81,16 @@ export default function EditorPage({ params }: Props) {
           setXesBefore(result.data.xesBefore || '');
           setXesAfter(result.data.xesAfter || '');
           setCimVer(result.data.cimVer || '');
-
           setOverview(
             Array.isArray(result.data.overview) && result.data.overview.length > 0
               ? result.data.overview
               : ['']
           );
-
-          setXeaDetails(
-            Array.isArray(result.data.xeaDetails) ? result.data.xeaDetails : []
-          );
-
-          setXesDetails(
-            Array.isArray(result.data.xesDetails) ? result.data.xesDetails : []
-          );
-
-          setTestVersions(
-            Array.isArray(result.data.testVersions) ? result.data.testVersions : []
-          );
-
-          setNotes(
-            Array.isArray(result.data.notes) ? result.data.notes : []
-          );
-
-          setHistory(
-            Array.isArray(result.data.history) ? result.data.history : []
-          );
+          setXeaDetails(Array.isArray(result.data.xeaDetails) ? result.data.xeaDetails : []);
+          setXesDetails(Array.isArray(result.data.xesDetails) ? result.data.xesDetails : []);
+          setTestVersions(Array.isArray(result.data.testVersions) ? result.data.testVersions : []);
+          setNotes(Array.isArray(result.data.notes) ? result.data.notes : []);
+          setHistory(Array.isArray(result.data.history) ? result.data.history : []);
         }
       } catch (err) {
         console.error(err);
@@ -135,123 +100,107 @@ export default function EditorPage({ params }: Props) {
     loadData();
   }, [site, equipment]);
 
-useEffect(() => {
-  const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
-  const finalUser = existing && existing.trim()
-    ? existing.trim()
-    : normalizeUserName(window.prompt('에디터에서 사용할 이름을 입력하세요.', 'User01'));
+  useEffect(() => {
+    const existing = window.localStorage.getItem(USER_NAME_STORAGE_KEY);
+    const finalUser =
+      existing && existing.trim()
+        ? existing.trim()
+        : normalizeUserName(window.prompt('에디터에서 사용할 이름을 입력하세요.', 'User01'));
 
-  window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalUser);
-  setCurrentUser(finalUser);
+    window.localStorage.setItem(USER_NAME_STORAGE_KEY, finalUser);
 
-  let ownsLock = false;
+    let ownsLock = false;
 
-  const acquire = async () => {
-    try {
-      const res = await fetch('/api/acquire-lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          site,
-          equipment,
-          user: finalUser,
-        }),
-      });
+    const acquire = async () => {
+      try {
+        const res = await fetch('/api/acquire-lock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ site, equipment, user: finalUser }),
+        });
 
-      const result = await res.json();
+        const result = await res.json();
 
-      if (result.ok && result.acquired) {
-        if (result.takenOver) {
-          setLockMessage(`기존 stale lock을 ${finalUser} 사용자가 인계받았습니다.`);
+        if (result.ok && result.acquired) {
+          if (result.takenOver) {
+            setLockMessage(`기존 stale lock을 ${finalUser} 사용자가 인계받았습니다.`);
+          } else {
+            setLockMessage(`${finalUser} 사용자가 현재 편집 중입니다.`);
+          }
+          ownsLock = true;
+          setReadOnly(false);
         } else {
-          setLockMessage(`${finalUser} 사용자가 현재 편집 중입니다.`);
+          const otherUser = result.lock?.user || '다른 사용자';
+          setLockMessage(`${otherUser} 사용자가 현재 수정 중입니다. 읽기 전용으로 열립니다.`);
+          ownsLock = false;
+          setReadOnly(true);
         }
-        ownsLock = true;
-        setReadOnly(false);
-      } else {
-        const otherUser = result.lock?.user || '다른 사용자';
-        setLockMessage(`${otherUser} 사용자가 현재 수정 중입니다. 읽기 전용으로 열립니다.`);
+      } catch (err) {
+        console.error(err);
+        setLockMessage('락 상태 확인 실패. 읽기 전용으로 전환합니다.');
         ownsLock = false;
         setReadOnly(true);
       }
-    } catch (err) {
-      console.error(err);
-      setLockMessage('락 상태 확인 실패. 읽기 전용으로 전환합니다.');
-      ownsLock = false;
-      setReadOnly(true);
-    }
-  };
+    };
 
-  acquire();
-
-  // 편집 중인 사용자는 2분마다 락을 갱신한다.
-  // 락 만료 기준은 서버에서 10분으로 관리되므로, 브라우저/네트워크가 끊기면 최대 10분 뒤 자동 해제된다.
-  const heartbeatTimer = window.setInterval(() => {
-    if (ownsLock) {
+    const initTimer = window.setTimeout(() => {
+      setCurrentUser(finalUser);
       acquire();
-    }
-  }, 1000 * 60 * 2);
+    }, 0);
 
-  const handleBeforeUnload = () => {
-    navigator.sendBeacon?.(
-      '/api/release-lock',
-      new Blob(
-        [
-          JSON.stringify({
-            site,
-            equipment,
-            user: finalUser,
-          }),
-        ],
-        { type: 'application/json' }
-      )
-    );
-  };
+    const heartbeatTimer = window.setInterval(() => {
+      if (ownsLock) {
+        acquire();
+      }
+    }, 1000 * 60 * 2);
 
-  window.addEventListener('beforeunload', handleBeforeUnload);
+    const handleBeforeUnload = () => {
+      navigator.sendBeacon?.(
+        '/api/release-lock',
+        new Blob([JSON.stringify({ site, equipment, user: finalUser })], {
+          type: 'application/json',
+        })
+      );
+    };
 
-  return () => {
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-    window.clearInterval(heartbeatTimer);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
-    fetch('/api/release-lock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        site,
-        equipment,
-        user: finalUser,
-      }),
-      keepalive: true,
-    }).catch(() => {});
-  };
-}, [site, equipment]);
+    return () => {
+      window.clearTimeout(initTimer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.clearInterval(heartbeatTimer);
+
+      fetch('/api/release-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site, equipment, user: finalUser }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+  }, [site, equipment]);
 
   const handleChangeUserName = () => {
-    const input = window.prompt('저장/편집 이력에 표시할 사용자 이름을 입력하세요.', currentUser || 'User01');
+    const input = window.prompt(
+      '저장/편집 이력에 표시할 사용자 이름을 입력하세요.',
+      currentUser || 'User01'
+    );
     if (input === null) return;
 
     const nextUser = normalizeUserName(input);
     window.localStorage.setItem(USER_NAME_STORAGE_KEY, nextUser);
     setCurrentUser(nextUser);
-    alert(`사용자 이름이 '${nextUser}'(으)로 변경되었습니다. 이미 잡힌 편집 락은 페이지를 다시 열면 새 이름으로 갱신됩니다.`);
+    showToast(
+      `사용자 이름이 '${nextUser}'(으)로 변경되었습니다. 이미 잡힌 편집 락은 페이지를 다시 열면 새 이름으로 갱신됩니다.`,
+      'info'
+    );
   };
 
-  const navItems: { key: SectionKey; label: string; num: string }[] = [
-    { key: 'basic', label: '기본 정보', num: '1' },
-    { key: 'xea', label: 'XEA 상세', num: '2' },
-    { key: 'xes', label: 'XES 상세', num: '3' },
-    { key: 'test', label: 'Test Version', num: '4' },
-    { key: 'notes', label: 'Important Notes', num: '5' },
-    { key: 'history', label: '업데이트 이력', num: '6' },
-    { key: 'generate', label: '생성 & 다운로드', num: '✓' },
-  ];
-
   const saveCurrent = async () => {
-        if (readOnly) {
-      alert('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.');
+    if (readOnly) {
+      showToast('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.', 'error');
       return;
     }
+
     const payload = {
       site,
       equipment,
@@ -269,14 +218,11 @@ useEffect(() => {
       history,
       updatedBy: currentUser || 'Anonymous',
     };
-    
 
     try {
       const res = await fetch('/api/test-save', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -284,54 +230,46 @@ useEffect(() => {
       if (!result.ok) {
         throw new Error(result.message || '저장 실패');
       }
-      alert(`저장 완료`);
+      showToast('저장 완료', 'success');
       setIsDirty(false);
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : '저장 실패');
+      showToast(err instanceof Error ? err.message : '저장 실패', 'error');
     }
   };
 
-const releaseAndGoDashboard = async () => {
-  try {
-    console.log('[release] start', { site, equipment, currentUser });
+  const releaseAndGoDashboard = async () => {
+    try {
+      const res = await fetch('/api/release-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site, equipment, user: currentUser }),
+      });
 
-    const res = await fetch('/api/release-lock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        site,
-        equipment,
-        user: currentUser,
-      }),
-    });
+      const result = await res.json();
 
-    const result = await res.json();
+      if (result.ok) {
+        setIsDirty(false);
+      }
 
-    if (result.ok) {
-      setIsDirty(false);
+      if (!result.ok || result.released === false) {
+        showToast(`락 해제 실패: ${result.message || 'unknown'}`, 'error');
+        return;
+      }
+
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('release lock failed:', err);
+      showToast('release-lock 호출 중 오류가 발생했습니다.', 'error');
     }
-    console.log('[release] result', result);
+  };
 
-    if (!result.ok || result.released === false) {
-      alert(
-        `락 해제 실패\n` +
-          JSON.stringify(result, null, 2)
-      );
+  const downloadDocx = async () => {
+    if (readOnly) {
+      showToast('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.', 'error');
       return;
     }
 
-    router.push('/dashboard');
-  } catch (err) {
-    console.error('release lock failed:', err);
-    alert('release-lock 호출 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
-  }
-};
-    const downloadDocx = async () => {
-          if (readOnly) {
-      alert('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.');
-      return;
-    }
     const payload = {
       site,
       equipment,
@@ -369,84 +307,81 @@ const releaseAndGoDashboard = async () => {
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
       const today = `${yyyy}-${mm}-${dd}`;
-
-a.download = `${today}_${site}_${equipment}_ReleaseNote.docx`;
+      a.download = `${today}_${site}_${equipment}_ReleaseNote.docx`;
       a.click();
       window.URL.revokeObjectURL(url);
+      showToast('DOCX 다운로드가 시작되었습니다.', 'success');
     } catch (err) {
-      alert('DOCX 생성 실패');
+      showToast('DOCX 생성 실패', 'error');
       console.error(err);
     }
   };
 
   const hasMeaningfulContent = () => {
-  const hasOverviewText = overview.some((item) => String(item || '').trim() !== '');
-  const hasXea = String(xeaAfter || xeaBefore || '').trim() !== '';
-  const hasXes = String(xesAfter || xesBefore || '').trim() !== '';
-  const hasCim = String(cimVer || '').trim() !== '';
-  const hasDate = String(date || '').trim() !== '';
-
-  return hasOverviewText || hasXea || hasXes || hasCim || hasDate;
-};
-
-const buildHistorySnapshot = (): HistoryRow => {
-  const summaryText = overview
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-    .join(' / ');
-
-  return {
-    date: date || new Date().toISOString().slice(0, 10),
-    xea: xeaAfter || xeaBefore || '',
-    xes: xesAfter || xesBefore || '',
-    cim: cimVer || '',
-    summary: summaryText || '새 릴리즈 생성 전 자동 저장',
+    const hasOverviewText = overview.some((item) => String(item || '').trim() !== '');
+    const hasXea = String(xeaAfter || xeaBefore || '').trim() !== '';
+    const hasXes = String(xesAfter || xesBefore || '').trim() !== '';
+    const hasCim = String(cimVer || '').trim() !== '';
+    const hasDate = String(date || '').trim() !== '';
+    return hasOverviewText || hasXea || hasXes || hasCim || hasDate;
   };
-};
 
-const handleNewDocument = () => {
-  if (readOnly) {
-    alert('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.');
-    return;
-  }
+  const buildHistorySnapshot = (): HistoryRow => {
+    const summaryText = overview
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .join(' / ');
 
-  const ok = window.confirm('현재 내용을 업데이트 이력에 추가하고 새 문서를 시작하시겠습니까?');
-  if (!ok) return;
+    return {
+      date: date || new Date().toISOString().slice(0, 10),
+      xea: xeaAfter || xeaBefore || '',
+      xes: xesAfter || xesBefore || '',
+      cim: cimVer || '',
+      summary: summaryText || '새 릴리즈 생성 전 자동 저장',
+    };
+  };
 
-  if (hasMeaningfulContent()) {
-    const snapshot = buildHistorySnapshot();
-    setHistory((prev) => [snapshot, ...prev]);
-  }
+  const handleNewDocument = () => {
+    if (readOnly) {
+      showToast('현재 읽기 전용 상태입니다. 다른 사용자가 수정 중입니다.', 'error');
+      return;
+    }
 
-  const today = new Date().toISOString().slice(0, 10);
+    const ok = window.confirm('현재 내용을 업데이트 이력에 추가하고 새 문서를 시작하시겠습니까?');
+    if (!ok) return;
 
-  setDate(today);
-  setXeaBefore('');
-  setXeaAfter('');
-  setXesBefore('');
-  setXesAfter('');
-  setCimVer('');
-  setOverview(['']);
-  setXeaDetails([]);
-  setXesDetails([]);
-  setTestVersions([]);
-  setNotes([]);
-  // history는 유지
-  // lock/readOnly/currentUser는 유지
+    if (hasMeaningfulContent()) {
+      const snapshot = buildHistorySnapshot();
+      setHistory((prev) => [snapshot, ...prev]);
+    }
 
-  setActiveSection('basic');
-  setIsDirty(true);
-};
-  
+    const today = new Date().toISOString().slice(0, 10);
+    setDate(today);
+    setXeaBefore('');
+    setXeaAfter('');
+    setXesBefore('');
+    setXesAfter('');
+    setCimVer('');
+    setOverview(['']);
+    setXeaDetails([]);
+    setXesDetails([]);
+    setTestVersions([]);
+    setNotes([]);
+    setActiveSection('basic');
+    setIsDirty(true);
+    showToast('새 문서를 시작합니다. 저장 버튼으로 반영하세요.', 'info');
+  };
+
+  const markDirty = () => setIsDirty(true);
 
   const addOverviewRow = () => {
     setOverview((prev) => [...prev, '']);
-    setIsDirty(true);
+    markDirty();
   };
 
   const updateOverviewRow = (index: number, value: string) => {
     setOverview((prev) => prev.map((item, i) => (i === index ? value : item)));
-    setIsDirty(true);
+    markDirty();
   };
 
   const removeOverviewRow = (index: number) => {
@@ -454,21 +389,11 @@ const handleNewDocument = () => {
       const next = prev.filter((_, i) => i !== index);
       return next.length > 0 ? next : [''];
     });
-    setIsDirty(true);
+    markDirty();
   };
 
-  const addDetailRow = (
-    setter: React.Dispatch<React.SetStateAction<DetailRow[]>>
-  ) => {
-    setter((prev) => [
-      ...prev,
-      {
-        ref: '',
-        category: 'Improvement',
-        title: '',
-        desc: '',
-      },
-    ]);
+  const addDetailRow = (setter: React.Dispatch<React.SetStateAction<DetailRow[]>>) => {
+    setter((prev) => [...prev, { ref: '', category: 'Improvement', title: '', desc: '' }]);
   };
 
   const updateDetailRow = (
@@ -477,9 +402,7 @@ const handleNewDocument = () => {
     field: keyof DetailRow,
     value: string
   ) => {
-    setter((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
-    );
+    setter((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
   };
 
   const removeDetailRow = (
@@ -493,14 +416,8 @@ const handleNewDocument = () => {
     setNotes((prev) => [...prev, { icon: '!', text: '' }]);
   };
 
-  const updateNoteRow = (
-    index: number,
-    field: keyof NoteRow,
-    value: string
-  ) => {
-    setNotes((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
-    );
+  const updateNoteRow = (index: number, field: keyof NoteRow, value: string) => {
+    setNotes((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
   };
 
   const removeNoteRow = (index: number) => {
@@ -508,26 +425,11 @@ const handleNewDocument = () => {
   };
 
   const addHistoryRow = () => {
-    setHistory((prev) => [
-      ...prev,
-      {
-        date: '',
-        xea: '',
-        xes: '',
-        cim: '',
-        summary: '',
-      },
-    ]);
+    setHistory((prev) => [...prev, { date: '', xea: '', xes: '', cim: '', summary: '' }]);
   };
 
-  const updateHistoryRow = (
-    index: number,
-    field: keyof HistoryRow,
-    value: string
-  ) => {
-    setHistory((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
-    );
+  const updateHistoryRow = (index: number, field: keyof HistoryRow, value: string) => {
+    setHistory((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
   };
 
   const removeHistoryRow = (index: number) => {
@@ -535,1192 +437,154 @@ const handleNewDocument = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#eef1f7', color: '#222' }}>
-      <div
-        style={{
-          background: '#1B3A6B',
-          color: '#fff',
-          padding: '12px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 8,
-              overflow: 'hidden',
-              background: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Image
-              src="/park-mascot.png"
-              alt="Park mascot"
-              width={42}
-              height={42}
-              style={{ objectFit: 'cover' }}
-            />
-         </div>
+    <div className="min-h-screen bg-park-surface text-slate-800">
+      <EditorHeader
+        displaySite={displaySite}
+        equipment={equipment}
+        currentUser={currentUser}
+        readOnly={readOnly}
+        onNewDocument={handleNewDocument}
+        onGoDashboard={releaseAndGoDashboard}
+        onChangeUserName={handleChangeUserName}
+        onSave={saveCurrent}
+      />
 
-        
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>
-            SW Release Note Generator
-           </div>
-           <div style={{ fontSize: 11, color: '#cfe0ff' }}>
-             Park Systems Corporation | Field Application Engineering
-           </div>
-         </div>
-       </div>
+      <LockStatusBanner message={lockMessage} readOnly={readOnly} />
 
-      <div
-        style={{
-          margin: '16px 20px 0',
-          padding: '12px 16px',
-          borderRadius: 10,
-          border: `1px solid ${readOnly ? '#f5c2c7' : '#cfe2ff'}`,
-          background: readOnly ? '#f8d7da' : '#e7f1ff',
-          color: readOnly ? '#842029' : '#084298',
-          fontWeight: 700,
-        }}
-      >
-        {lockMessage || '락 상태 확인 중...'}
-      </div>       
+      <div className="mx-auto flex max-w-[1600px] flex-col lg:flex-row">
+        <EditorSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <EditorMobileNav activeSection={activeSection} onSectionChange={setActiveSection} />
 
-       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-  <button
-    type="button"
-    onClick={handleNewDocument}
-    disabled={readOnly}
-    title={readOnly ? '다른 사용자가 수정 중입니다' : ''}
-    style={{
-      background: '#ED7D31',
-      color: '#fff',
-      padding: '8px 14px',
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 700,
-      border: 'none',
-      cursor: 'pointer',
-      opacity: readOnly ? 0.5 : 1,
-      pointerEvents: readOnly ? 'none' : 'auto',
-    }}
-  >
-    새로 만들기
-  </button>
-
-  <button
-    type="button"
-    onClick={releaseAndGoDashboard}
-    style={{
-      background: '#4472C4',
-      color: '#fff',
-      padding: '8px 14px',
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 700,
-      border: 'none',
-      cursor: 'pointer',
-    }}
-  >
-    대시보드로 돌아가기
-  </button>
-
-  <button
-    type="button"
-    onClick={handleChangeUserName}
-    style={{
-      background: '#ffffff',
-      color: '#173b73',
-      padding: '8px 12px',
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 800,
-      border: '1px solid rgba(255,255,255,0.7)',
-      cursor: 'pointer',
-    }}
-  >
-    이름 수정: {currentUser || '-'}
-  </button>
-
-  <div style={{ fontSize: 12, color: '#d7e6ff' }}>
-    {displaySite} / {equipment}
-  </div>
-</div>
-     </div>
-
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 58px)' }}>
-        <aside
-          style={{
-            width: 220,
-            background: '#1B3A6B',
-            padding: '18px 0',
-            flexShrink: 0,
-          }}
-          
-          
-        >
-          {navItems.map((item) => {
-            const isActive = activeSection === item.key;
-
-            return (
-              <button
-                key={item.key}
-                onClick={() => setActiveSection(item.key)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '12px 22px',
-                  border: 'none',
-                  background: isActive ? '#2E5FA3' : 'transparent',
-                  color: isActive ? '#fff' : '#a8c4f0',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  borderLeft: isActive ? '3px solid #7ba9e6' : '3px solid transparent',
-                  fontSize: 13,
-                }}
-              >
-                <span
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: isActive ? '#4472C4' : '#2E5FA3',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.num}
-                </span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-          <div style={{ padding: '18px 16px 0 16px' }}>
-  <Link
-    href="/dashboard"
-    style={{
-      display: 'block',
-      width: '100%',
-      textAlign: 'center',
-      background: '#6F42C1',
-      color: '#fff',
-      textDecoration: 'none',
-      padding: '10px 12px',
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 700,
-    }}
-  >
-    🏠 설비 대시보드
-  </Link>
-</div>
-        </aside>
-
-        <main style={{ flex: 1, padding: 24 }}>
+        <main className="min-w-0 flex-1 p-4 pb-28 sm:p-6 lg:pb-6">
           {activeSection === 'basic' && (
-            <>
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, #1B3A6B 0%, #2E5FA3 100%)',
-                  color: '#fff',
-                  borderRadius: 10,
-                  padding: 20,
-                  marginBottom: 18,
-                }}
-              >
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>SW Release Note</div>
-                <div style={{ fontSize: 15, color: '#d7e6ff', lineHeight: 1.7 }}>
-                  SW Release Note를 작성합니다.
-                  <br />
-                  최종 DOCX는 생성 날짜 기준으로 파일명이 생성됩니다.
-                </div>
-              </div>
-
-              <section style={sectionStyle}>
-                <h2 style={sectionTitleStyle}>📋기본 정보</h2>
-
-                <div style={twoColGridStyle}>
-                  <div>
-                    <label style={labelStyle}>Site</label>
-                    <input value={displaySite} readOnly style={readonlyInputStyle} />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>Release Date</label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => {
-                        setDate(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      style={inputStyle}
-                      
-                    />
-                  </div>
-                </div>
-
-                <h3 style={subTitleStyle}>SW 버전 정보</h3>
-
-                <div style={twoColGridStyle}>
-                  <div>
-                    <label style={labelStyle}>XEA Version (Before → After)</label>
-                    <div style={arrowPairStyle}>
-                      <input
-                        value={xeaBefore}
-                        onChange={(e) => {
-                          setXeaBefore(e.target.value);
-                          setIsDirty(true);
-                        }}
-                        placeholder="예: 5.2.5 Dev3475"
-                        style={flexInputStyle}
-                      />
-                      <span style={arrowStyle}>→</span>
-                      <input
-                        value={xeaAfter}
-                        onChange={(e) => {
-                          setXeaAfter(e.target.value);
-                          setIsDirty(true);
-                        }}
-                        placeholder="예: 5.2.5 Dev3584"
-                        style={flexInputStyle}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>XES Version (Before → After)</label>
-                    <div style={arrowPairStyle}>
-                      <input
-                        value={xesBefore}
-                        onChange={(e) => {
-                          setXesBefore(e.target.value);
-                          setIsDirty(true);
-                        }}
-                        placeholder="예: 5.2.5 Dev1525"
-                        style={flexInputStyle}
-                      />
-                      <span style={arrowStyle}>→</span>
-                      <input
-                        value={xesAfter}
-                        onChange={(e) => {
-                          setXesAfter(e.target.value);
-                          setIsDirty(true);
-                        }}
-                        placeholder="예: 5.2.5 Dev1533"
-                        style={flexInputStyle}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>CIM Version (없으면 비워두세요)</label>
-                    <input
-                      value={cimVer}
-                      onChange={(e) => {
-                        setCimVer(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="예: 20260310"
-                      style={inputStyle}
-                    />
-                  </div>
-                </div>
-
-                <h3 style={subTitleStyle}>
-                  Release Overview (주요 Update 사항)
-                </h3>
-
-                <div style={{ marginBottom: 12 }}>
-                  {overview.map((item, index) => (
-                    <div key={index} style={rowInlineStyle}>
-                      <span style={rowIndexStyle}>{index + 1}.</span>
-                      <input
-                        value={item}
-                        onChange={(e) => updateOverviewRow(index, e.target.value)}
-                        placeholder="고객 관점의 핵심 변경 내용"
-                        style={rowInputStyle}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeOverviewRow(index)}
-                        style={deleteBtnStyle}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={footerBtnRowStyle}>
-                  <button type="button" onClick={addOverviewRow} style={subActionBtnStyle}>
-                    + 요약 항목 추가
-                  </button>
-
-                  <button
-  type="button"
-  onClick={saveCurrent}
-  disabled={readOnly}
-  title={readOnly ? '다른 사용자가 수정 중입니다' : ''}
-  style={{
-    ...mainActionBtnStyle,
-    opacity: readOnly ? 0.5 : 1,
-    pointerEvents: readOnly ? 'none' : 'auto',
-  }}
->
-                    현재 내용 저장
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveSection('xea')}
-                    style={nextBtnStyle}
-                  >
-                    다음 ▶
-                  </button>
-                </div>
-              </section>
-            </>
+            <BasicInfoSection
+              readOnly={readOnly}
+              displaySite={displaySite}
+              date={date}
+              xeaBefore={xeaBefore}
+              xeaAfter={xeaAfter}
+              xesBefore={xesBefore}
+              xesAfter={xesAfter}
+              cimVer={cimVer}
+              overview={overview}
+              onDateChange={(value) => {
+                setDate(value);
+                markDirty();
+              }}
+              onXeaBeforeChange={(value) => {
+                setXeaBefore(value);
+                markDirty();
+              }}
+              onXeaAfterChange={(value) => {
+                setXeaAfter(value);
+                markDirty();
+              }}
+              onXesBeforeChange={(value) => {
+                setXesBefore(value);
+                markDirty();
+              }}
+              onXesAfterChange={(value) => {
+                setXesAfter(value);
+                markDirty();
+              }}
+              onCimVerChange={(value) => {
+                setCimVer(value);
+                markDirty();
+              }}
+              onOverviewChange={updateOverviewRow}
+              onAddOverview={addOverviewRow}
+              onRemoveOverview={removeOverviewRow}
+              onSave={saveCurrent}
+              onNext={() => setActiveSection('xea')}
+            />
           )}
 
           {activeSection === 'xea' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>🔬XEA 상세</h2>
-
-              <div style={{ marginBottom: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => addDetailRow(setXeaDetails)}
-                  style={subActionBtnStyle}
-                >
-                  + 항목 추가
-                </button>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Reference</th>
-                      <th style={thStyle}>Category</th>
-                      <th style={thStyle}>Item</th>
-                      <th style={thStyle}>Description</th>
-                      <th style={thStyle}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {xeaDetails.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={emptyTdStyle}>
-                          아직 등록된 XEA 상세 항목이 없습니다.
-                        </td>
-                      </tr>
-                    ) : (
-                      xeaDetails.map((row, index) => (
-                        <tr key={index}>
-                          <td style={tdStyle}>
-                            <input
-                              value={row.ref}
-                              onChange={(e) =>
-                                updateDetailRow(setXeaDetails, index, 'ref', e.target.value)
-                              }
-                              placeholder="예: PMS #4100"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <select
-                              value={row.category}
-                              onChange={(e) =>
-                                updateDetailRow(
-                                  setXeaDetails,
-                                  index,
-                                  'category',
-                                  e.target.value
-                                )
-                              }
-                              style={cellInputStyle}
-                            >
-                              <option value="New Feature">New Feature</option>
-                              <option value="Improvement">Improvement</option>
-                              <option value="Bug Fix">Bug Fix</option>
-                            </select>
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.title}
-                              onChange={(e) =>
-                                updateDetailRow(setXeaDetails, index, 'title', e.target.value)
-                              }
-                              placeholder="항목 제목"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <textarea
-                              value={row.desc}
-                              onChange={(e) =>
-                                updateDetailRow(setXeaDetails, index, 'desc', e.target.value)
-                              }
-                              placeholder="고객용 설명"
-                              style={{ ...cellInputStyle, minHeight: 70, resize: 'vertical' }}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <button
-                              type="button"
-                              onClick={() => removeDetailRow(setXeaDetails, index)}
-                              style={deleteBtnStyle}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('basic')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('xes')}
-                  style={nextBtnStyle}
-                >
-                  다음 ▶
-                </button>
-              </div>
-            </section>
+            <DetailTableSection
+              title="🔬 XEA 상세"
+              emptyMessage="아직 등록된 XEA 상세 항목이 없습니다."
+              rows={xeaDetails}
+              readOnly={readOnly}
+              onAdd={() => addDetailRow(setXeaDetails)}
+              onUpdate={(index, field, value) => updateDetailRow(setXeaDetails, index, field, value)}
+              onRemove={(index) => removeDetailRow(setXeaDetails, index)}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('basic')}
+              onNext={() => setActiveSection('xes')}
+            />
           )}
 
           {activeSection === 'xes' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>🔬XES 상세</h2>
-
-              <div style={{ marginBottom: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => addDetailRow(setXesDetails)}
-                  style={subActionBtnStyle}
-                >
-                  + 항목 추가
-                </button>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Reference</th>
-                      <th style={thStyle}>Category</th>
-                      <th style={thStyle}>Item</th>
-                      <th style={thStyle}>Description</th>
-                      <th style={thStyle}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {xesDetails.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={emptyTdStyle}>
-                          아직 등록된 XES 상세 항목이 없습니다.
-                        </td>
-                      </tr>
-                    ) : (
-                      xesDetails.map((row, index) => (
-                        <tr key={index}>
-                          <td style={tdStyle}>
-                            <input
-                              value={row.ref}
-                              onChange={(e) =>
-                                updateDetailRow(setXesDetails, index, 'ref', e.target.value)
-                              }
-                              placeholder="예: PMS #4100"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <select
-                              value={row.category}
-                              onChange={(e) =>
-                                updateDetailRow(
-                                  setXesDetails,
-                                  index,
-                                  'category',
-                                  e.target.value
-                                )
-                              }
-                              style={cellInputStyle}
-                            >
-                              <option value="New Feature">New Feature</option>
-                              <option value="Improvement">Improvement</option>
-                              <option value="Bug Fix">Bug Fix</option>
-                            </select>
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.title}
-                              onChange={(e) =>
-                                updateDetailRow(setXesDetails, index, 'title', e.target.value)
-                              }
-                              placeholder="항목 제목"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <textarea
-                              value={row.desc}
-                              onChange={(e) =>
-                                updateDetailRow(setXesDetails, index, 'desc', e.target.value)
-                              }
-                              placeholder="고객용 설명"
-                              style={{ ...cellInputStyle, minHeight: 70, resize: 'vertical' }}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <button
-                              type="button"
-                              onClick={() => removeDetailRow(setXesDetails, index)}
-                              style={deleteBtnStyle}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('xea')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('test')}
-                  style={nextBtnStyle}
-                >
-                  다음 ▶
-                </button>
-              </div>
-            </section>
+            <DetailTableSection
+              title="🔬 XES 상세"
+              emptyMessage="아직 등록된 XES 상세 항목이 없습니다."
+              rows={xesDetails}
+              readOnly={readOnly}
+              onAdd={() => addDetailRow(setXesDetails)}
+              onUpdate={(index, field, value) => updateDetailRow(setXesDetails, index, field, value)}
+              onRemove={(index) => removeDetailRow(setXesDetails, index)}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('xea')}
+              onNext={() => setActiveSection('test')}
+            />
           )}
 
           {activeSection === 'test' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>🧪Test Version</h2>
-
-              <div style={{ marginBottom: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => addDetailRow(setTestVersions)}
-                  style={subActionBtnStyle}
-                >
-                  + 항목 추가
-                </button>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Reference</th>
-                      <th style={thStyle}>Category</th>
-                      <th style={thStyle}>Item</th>
-                      <th style={thStyle}>Description</th>
-                      <th style={thStyle}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {testVersions.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={emptyTdStyle}>
-                          아직 등록된 Test Version 항목이 없습니다.
-                        </td>
-                      </tr>
-                    ) : (
-                      testVersions.map((row, index) => (
-                        <tr key={index}>
-                          <td style={tdStyle}>
-                            <input
-                              value={row.ref}
-                              onChange={(e) =>
-                                updateDetailRow(setTestVersions, index, 'ref', e.target.value)
-                              }
-                              placeholder="예: PMS #9999"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <select
-                              value={row.category}
-                              onChange={(e) =>
-                                updateDetailRow(
-                                  setTestVersions,
-                                  index,
-                                  'category',
-                                  e.target.value
-                                )
-                              }
-                              style={cellInputStyle}
-                            >
-                              <option value="New Feature">New Feature</option>
-                              <option value="Improvement">Improvement</option>
-                              <option value="Bug Fix">Bug Fix</option>
-                            </select>
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.title}
-                              onChange={(e) =>
-                                updateDetailRow(setTestVersions, index, 'title', e.target.value)
-                              }
-                              placeholder="테스트 버전 제목"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <textarea
-                              value={row.desc}
-                              onChange={(e) =>
-                                updateDetailRow(setTestVersions, index, 'desc', e.target.value)
-                              }
-                              placeholder="테스트 버전 설명"
-                              style={{ ...cellInputStyle, minHeight: 70, resize: 'vertical' }}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <button
-                              type="button"
-                              onClick={() => removeDetailRow(setTestVersions, index)}
-                              style={deleteBtnStyle}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('xes')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('notes')}
-                  style={nextBtnStyle}
-                >
-                  다음 ▶
-                </button>
-              </div>
-            </section>
+            <DetailTableSection
+              title="🧪 Test Version"
+              emptyMessage="아직 등록된 Test Version 항목이 없습니다."
+              rows={testVersions}
+              readOnly={readOnly}
+              refPlaceholder="예: PMS #9999"
+              titlePlaceholder="테스트 버전 제목"
+              descPlaceholder="테스트 버전 설명"
+              onAdd={() => addDetailRow(setTestVersions)}
+              onUpdate={(index, field, value) => updateDetailRow(setTestVersions, index, field, value)}
+              onRemove={(index) => removeDetailRow(setTestVersions, index)}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('xes')}
+              onNext={() => setActiveSection('notes')}
+            />
           )}
 
           {activeSection === 'notes' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>📌Important Notes</h2>
-
-              <div style={{ marginBottom: 14 }}>
-                <button type="button" onClick={addNoteRow} style={subActionBtnStyle}>
-                  + 항목 추가
-                </button>
-              </div>
-
-              {notes.length === 0 ? (
-                <div style={emptyBoxStyle}>아직 등록된 Important Notes가 없습니다.</div>
-              ) : (
-                notes.map((row, index) => (
-                  <div key={index} style={noteRowWrapStyle}>
-                    <select
-                      value={row.icon}
-                      onChange={(e) =>
-                        updateNoteRow(index, 'icon', e.target.value as '!' | 'i')
-                      }
-                      style={{ ...cellInputStyle, width: 100 }}
-                    >
-                      <option value="!">[!]</option>
-                      <option value="i">[i]</option>
-                    </select>
-
-                    <textarea
-                      value={row.text}
-                      onChange={(e) => updateNoteRow(index, 'text', e.target.value)}
-                      placeholder="고객에게 전달할 중요 메모"
-                      style={{
-                        ...cellInputStyle,
-                        minHeight: 80,
-                        resize: 'vertical',
-                        flex: 1,
-                      }}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => removeNoteRow(index)}
-                      style={deleteBtnStyle}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))
-              )}
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('test')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('history')}
-                  style={nextBtnStyle}
-                >
-                  다음 ▶
-                </button>
-              </div>
-            </section>
+            <NotesSection
+              notes={notes}
+              readOnly={readOnly}
+              onAdd={addNoteRow}
+              onUpdate={updateNoteRow}
+              onRemove={removeNoteRow}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('test')}
+              onNext={() => setActiveSection('history')}
+            />
           )}
 
           {activeSection === 'history' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>🕘업데이트 이력</h2>
-
-              <div style={{ marginBottom: 14 }}>
-                <button type="button" onClick={addHistoryRow} style={subActionBtnStyle}>
-                  + 이력 추가
-                </button>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Date</th>
-                      <th style={thStyle}>XEA Ver.</th>
-                      <th style={thStyle}>XES Ver.</th>
-                      <th style={thStyle}>CIM</th>
-                      <th style={thStyle}>주요 변경 내용</th>
-                      <th style={thStyle}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} style={emptyTdStyle}>
-                          아직 등록된 업데이트 이력이 없습니다.
-                        </td>
-                      </tr>
-                    ) : (
-                      history.map((row, index) => (
-                        <tr key={index}>
-                          <td style={tdStyle}>
-                            <input
-                              type="date"
-                              value={row.date}
-                              onChange={(e) =>
-                                updateHistoryRow(index, 'date', e.target.value)
-                              }
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.xea}
-                              onChange={(e) =>
-                                updateHistoryRow(index, 'xea', e.target.value)
-                              }
-                              placeholder="예: 5.2.5 Dev3584"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.xes}
-                              onChange={(e) =>
-                                updateHistoryRow(index, 'xes', e.target.value)
-                              }
-                              placeholder="예: 5.2.5 Dev1533"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <input
-                              value={row.cim}
-                              onChange={(e) =>
-                                updateHistoryRow(index, 'cim', e.target.value)
-                              }
-                              placeholder="-"
-                              style={cellInputStyle}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <textarea
-                              value={row.summary}
-                              onChange={(e) =>
-                                updateHistoryRow(index, 'summary', e.target.value)
-                              }
-                              placeholder="주요 변경 내용"
-                              style={{ ...cellInputStyle, minHeight: 80, resize: 'vertical' }}
-                            />
-                          </td>
-
-                          <td style={tdStyle}>
-                            <button
-                              type="button"
-                              onClick={() => removeHistoryRow(index)}
-                              style={deleteBtnStyle}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('notes')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('generate')}
-                  style={nextBtnStyle}
-                >
-                  다음 ▶
-                </button>
-              </div>
-            </section>
+            <HistorySection
+              history={history}
+              readOnly={readOnly}
+              onAdd={addHistoryRow}
+              onUpdate={updateHistoryRow}
+              onRemove={removeHistoryRow}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('notes')}
+              onNext={() => setActiveSection('generate')}
+            />
           )}
 
           {activeSection === 'generate' && (
-            <section style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>📦생성 & 다운로드</h2>
-
-              <div style={{ color: '#555', lineHeight: 1.8, marginBottom: 18 }}>
-                현재 내용 저장을 클릭하고 DOCX 다운로드를 클릭하여 파일을 생성하세요.              
-              </div>
-
-              <div style={footerBtnRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('history')}
-                  style={prevBtnStyle}
-                >
-                  ◀ 이전
-                </button>
-
-                <button type="button" onClick={saveCurrent} style={mainActionBtnStyle}>
-                  현재 내용 저장
-                </button>
-
-                <button
-                  type="button"
-                  onClick={downloadDocx}
-                  disabled={readOnly}
-                  title={readOnly ? '다른 사용자가 수정 중입니다' : ''}
-                  style={{
-                    ...nextBtnStyle,
-                    opacity: readOnly ? 0.5 : 1,
-                    pointerEvents: readOnly ? 'none' : 'auto',
-                  }}
-                >
-                  DOCX 다운로드
-                </button>
-              </div>
-            </section>
+            <GenerateSection
+              readOnly={readOnly}
+              onSave={saveCurrent}
+              onPrev={() => setActiveSection('history')}
+              onDownloadDocx={downloadDocx}
+            />
           )}
         </main>
       </div>
+
+      <DashboardToast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 }
-
-const sectionStyle: CSSProperties = {
-  background: '#fff',
-  borderRadius: 10,
-  padding: 24,
-  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-};
-
-const sectionTitleStyle: CSSProperties = {
-  fontSize: 18,
-  color: '#1B3A6B',
-  marginBottom: 18,
-  paddingBottom: 10,
-  borderBottom: '2px solid #1B3A6B',
-};
-
-const subTitleStyle: CSSProperties = {
-  fontSize: 14,
-  color: '#2E5FA3',
-  marginBottom: 10,
-};
-
-const labelStyle: CSSProperties = {
-  display: 'block',
-  fontWeight: 700,
-  fontSize: 12,
-  marginBottom: 6,
-};
-
-const twoColGridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 14,
-  marginBottom: 18,
-};
-
-const inputStyle: CSSProperties = {
-  width: '100%',
-  padding: 10,
-  border: '1px solid #ccd3e0',
-  borderRadius: 6,
-  background: '#fafbfd',
-};
-
-const readonlyInputStyle: CSSProperties = {
-  width: '100%',
-  padding: 10,
-  border: '1px solid #ccd3e0',
-  borderRadius: 6,
-  background: '#f5f7fb',
-};
-
-const arrowPairStyle: CSSProperties = {
-  display: 'flex',
-  gap: 8,
-  alignItems: 'center',
-};
-
-const flexInputStyle: CSSProperties = {
-  flex: 1,
-  padding: 10,
-  border: '1px solid #ccd3e0',
-  borderRadius: 6,
-  background: '#fafbfd',
-};
-
-const arrowStyle: CSSProperties = {
-  color: '#2E5FA3',
-  fontWeight: 700,
-};
-
-const rowInlineStyle: CSSProperties = {
-  display: 'flex',
-  gap: 8,
-  alignItems: 'center',
-  marginBottom: 8,
-};
-
-const rowIndexStyle: CSSProperties = {
-  minWidth: 18,
-  color: '#4472C4',
-  fontWeight: 700,
-};
-
-const rowInputStyle: CSSProperties = {
-  flex: 1,
-  padding: 10,
-  border: '1px solid #ccd3e0',
-  borderRadius: 6,
-  background: '#fafbfd',
-};
-
-const subActionBtnStyle: CSSProperties = {
-  background: '#4472C4',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '10px 14px',
-  cursor: 'pointer',
-  fontWeight: 700,
-};
-
-const mainActionBtnStyle: CSSProperties = {
-  background: '#1B3A6B',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '10px 14px',
-  cursor: 'pointer',
-  fontWeight: 700,
-};
-
-const prevBtnStyle: CSSProperties = {
-  background: '#4472C4',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '10px 16px',
-  cursor: 'pointer',
-  fontWeight: 700,
-};
-
-const nextBtnStyle: CSSProperties = {
-  marginLeft: 'auto',
-  background: '#4472C4',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '10px 18px',
-  cursor: 'pointer',
-  fontWeight: 700,
-};
-
-const deleteBtnStyle: CSSProperties = {
-  background: '#c00000',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '8px 12px',
-  cursor: 'pointer',
-};
-
-const footerBtnRowStyle: CSSProperties = {
-  display: 'flex',
-  gap: 10,
-  marginTop: 18,
-};
-
-const tableStyle: CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  fontSize: 12,
-};
-
-const thStyle: CSSProperties = {
-  background: '#1B3A6B',
-  color: '#fff',
-  padding: '10px 12px',
-  textAlign: 'left',
-  fontWeight: 700,
-  border: '1px solid #d9e2ef',
-};
-
-const tdStyle: CSSProperties = {
-  padding: 8,
-  borderBottom: '1px solid #e8ecf4',
-  verticalAlign: 'top',
-  background: '#fff',
-};
-
-const emptyTdStyle: CSSProperties = {
-  padding: 16,
-  borderBottom: '1px solid #e8ecf4',
-  color: '#666',
-  textAlign: 'center',
-  background: '#fafbfd',
-};
-
-const cellInputStyle: CSSProperties = {
-  width: '100%',
-  border: '1px solid #dde3ef',
-  borderRadius: 6,
-  padding: '8px 10px',
-  fontSize: 12,
-  background: '#fafbfd',
-  fontFamily: 'Arial, sans-serif',
-};
-
-const noteRowWrapStyle: CSSProperties = {
-  display: 'flex',
-  gap: 10,
-  alignItems: 'flex-start',
-  marginBottom: 10,
-};
-
-const emptyBoxStyle: CSSProperties = {
-  padding: 16,
-  border: '1px solid #e8ecf4',
-  background: '#fafbfd',
-  borderRadius: 6,
-  color: '#666',
-};

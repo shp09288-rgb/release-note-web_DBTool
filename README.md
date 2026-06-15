@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Configure Supabase before running locally. See **[SETUP.md](./SETUP.md)** for environment variable setup (`.env.local` from `.env.local.example`).
+
 First, run the development server:
 
 ```bash
