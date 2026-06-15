@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardToast, type ToastState } from '@/components/dashboard/dashboard-toast';
+import { DraftRestoreModal } from '@/components/editor/draft-restore-modal';
 import { EditorHeader } from '@/components/editor/editor-header';
 import { EditorMobileNav } from '@/components/editor/editor-mobile-nav';
 import { EditorSidebar } from '@/components/editor/editor-sidebar';
@@ -23,6 +24,7 @@ import { DetailTableSection } from '@/components/editor/sections/detail-table-se
 import { GenerateSection } from '@/components/editor/sections/generate-section';
 import { HistorySection } from '@/components/editor/sections/history-section';
 import { NotesSection } from '@/components/editor/sections/notes-section';
+import { useReleaseNoteDraft } from '@/components/editor/use-release-note-draft';
 import {
   normalizeUserName,
   USER_NAME_STORAGE_KEY,
@@ -31,6 +33,7 @@ import {
   type NoteRow,
   type SectionKey,
 } from '@/components/editor/types';
+import { clearReleaseNoteDraft, type ReleaseNoteDraft } from '@/lib/release-note-draft';
 
 interface Props {
   params: Promise<{
@@ -66,6 +69,7 @@ export default function EditorPage({ params }: Props) {
   const [, setIsDirty] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const [mobileViewMode, setMobileViewMode] = useState<EditorViewMode>('edit');
+  const [serverLoadComplete, setServerLoadComplete] = useState(false);
 
   const showToast = useCallback((message: string, type: NonNullable<ToastState>['type']) => {
     setToast({ message, type });
@@ -106,6 +110,8 @@ export default function EditorPage({ params }: Props) {
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setServerLoadComplete(true);
       }
     };
 
@@ -244,6 +250,7 @@ export default function EditorPage({ params }: Props) {
       }
       showToast('저장 완료', 'success');
       setIsDirty(false);
+      clearReleaseNoteDraft(site, equipment);
     } catch (err) {
       console.error(err);
       showToast(err instanceof Error ? err.message : '저장 실패', 'error');
@@ -498,6 +505,72 @@ export default function EditorPage({ params }: Props) {
 
   const editorWidthPct = 100 - previewWidthPct;
 
+  const draftEditorState = useMemo(
+    () => ({
+      activeSection,
+      date,
+      xeaBefore,
+      xeaAfter,
+      xesBefore,
+      xesAfter,
+      cimVer,
+      overview,
+      xeaDetails,
+      xesDetails,
+      testVersions,
+      notes,
+      history,
+    }),
+    [
+      activeSection,
+      date,
+      xeaBefore,
+      xeaAfter,
+      xesBefore,
+      xesAfter,
+      cimVer,
+      overview,
+      xeaDetails,
+      xesDetails,
+      testVersions,
+      notes,
+      history,
+    ]
+  );
+
+  const applyDraft = useCallback((draft: ReleaseNoteDraft) => {
+    setActiveSection(draft.activeSection);
+    setDate(draft.date);
+    setXeaBefore(draft.xeaBefore);
+    setXeaAfter(draft.xeaAfter);
+    setXesBefore(draft.xesBefore);
+    setXesAfter(draft.xesAfter);
+    setCimVer(draft.cimVer);
+    setOverview(
+      Array.isArray(draft.overview) && draft.overview.length > 0 ? draft.overview : ['']
+    );
+    setXeaDetails(draft.xeaDetails);
+    setXesDetails(draft.xesDetails);
+    setTestVersions(draft.testVersions);
+    setNotes(draft.notes);
+    setHistory(draft.history);
+    setIsDirty(true);
+  }, []);
+
+  const {
+    draftModalOpen,
+    pendingDraftSavedAt,
+    handleRestoreDraft,
+    handleDiscardDraft,
+  } = useReleaseNoteDraft({
+    site,
+    equipment,
+    readOnly,
+    serverLoadComplete,
+    state: draftEditorState,
+    applyDraft,
+  });
+
   return (
     <div className="flex min-h-screen flex-col bg-park-surface text-slate-800">
       <EditorHeader
@@ -657,6 +730,15 @@ export default function EditorPage({ params }: Props) {
       </div>
 
       <DashboardToast toast={toast} onDismiss={dismissToast} />
+
+      <DraftRestoreModal
+        open={draftModalOpen}
+        savedAt={pendingDraftSavedAt}
+        displaySite={displaySite}
+        equipment={equipment}
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDiscardDraft}
+      />
     </div>
   );
 }
