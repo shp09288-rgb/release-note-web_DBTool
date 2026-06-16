@@ -62,6 +62,7 @@ export default function EditorPage({ params }: Props) {
   const [overview, setOverview] = useState<string[]>(['']);
   const [xeaDetails, setXeaDetails] = useState<DetailRow[]>([]);
   const [xesDetails, setXesDetails] = useState<DetailRow[]>([]);
+  const [cimDetails, setCimDetails] = useState<DetailRow[]>([]);
   const [testVersions, setTestVersions] = useState<DetailRow[]>([]);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [history, setHistory] = useState<HistoryRow[]>([]);
@@ -113,6 +114,7 @@ export default function EditorPage({ params }: Props) {
           );
           setXeaDetails(Array.isArray(result.data.xeaDetails) ? result.data.xeaDetails : []);
           setXesDetails(Array.isArray(result.data.xesDetails) ? result.data.xesDetails : []);
+          setCimDetails(Array.isArray(result.data.cimDetails) ? result.data.cimDetails : []);
           setTestVersions(Array.isArray(result.data.testVersions) ? result.data.testVersions : []);
           setNotes(Array.isArray(result.data.notes) ? result.data.notes : []);
           setHistory(Array.isArray(result.data.history) ? result.data.history : []);
@@ -269,6 +271,7 @@ export default function EditorPage({ params }: Props) {
       overview,
       xeaDetails,
       xesDetails,
+      cimDetails,
       testVersions,
       notes,
       history,
@@ -339,6 +342,7 @@ export default function EditorPage({ params }: Props) {
       overview,
       xeaDetails,
       xesDetails,
+      cimDetails,
       testVersions,
       notes,
       history,
@@ -425,6 +429,7 @@ export default function EditorPage({ params }: Props) {
     setOverview(['']);
     setXeaDetails([]);
     setXesDetails([]);
+    setCimDetails([]);
     setTestVersions([]);
     setNotes([]);
     setActiveSection('basic');
@@ -523,6 +528,7 @@ export default function EditorPage({ params }: Props) {
         overview,
         xeaDetails,
         xesDetails,
+        cimDetails,
         testVersions,
         notes,
         history,
@@ -539,6 +545,7 @@ export default function EditorPage({ params }: Props) {
       overview,
       xeaDetails,
       xesDetails,
+      cimDetails,
       testVersions,
       notes,
       history,
@@ -559,6 +566,7 @@ export default function EditorPage({ params }: Props) {
       overview,
       xeaDetails,
       xesDetails,
+      cimDetails,
       testVersions,
       notes,
       history,
@@ -574,6 +582,7 @@ export default function EditorPage({ params }: Props) {
       overview,
       xeaDetails,
       xesDetails,
+      cimDetails,
       testVersions,
       notes,
       history,
@@ -593,6 +602,7 @@ export default function EditorPage({ params }: Props) {
     );
     setXeaDetails(draft.xeaDetails);
     setXesDetails(draft.xesDetails);
+    setCimDetails(draft.cimDetails);
     setTestVersions(draft.testVersions);
     setNotes(draft.notes);
     setHistory(draft.history);
@@ -712,6 +722,21 @@ export default function EditorPage({ params }: Props) {
               onRemove={(index) => removeDetailRow(setXesDetails, index)}
               onSave={saveCurrent}
               onPrev={() => handleSectionChange('xea')}
+              onNext={() => handleSectionChange('cim')}
+            />
+          )}
+
+          {activeSection === 'cim' && (
+            <DetailTableSection
+              title="🔧 CIM 상세"
+              emptyMessage="아직 등록된 CIM 상세 항목이 없습니다."
+              rows={cimDetails}
+              readOnly={readOnly}
+              onAdd={() => addDetailRow(setCimDetails)}
+              onUpdate={(index, field, value) => updateDetailRow(setCimDetails, index, field, value)}
+              onRemove={(index) => removeDetailRow(setCimDetails, index)}
+              onSave={saveCurrent}
+              onPrev={() => handleSectionChange('xes')}
               onNext={() => handleSectionChange('test')}
             />
           )}
@@ -729,7 +754,7 @@ export default function EditorPage({ params }: Props) {
               onUpdate={(index, field, value) => updateDetailRow(setTestVersions, index, field, value)}
               onRemove={(index) => removeDetailRow(setTestVersions, index)}
               onSave={saveCurrent}
-              onPrev={() => handleSectionChange('xes')}
+              onPrev={() => handleSectionChange('cim')}
               onNext={() => handleSectionChange('notes')}
             />
           )}

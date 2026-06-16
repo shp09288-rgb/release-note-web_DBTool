@@ -2,6 +2,7 @@ export type SectionKey =
   | 'basic'
   | 'xea'
   | 'xes'
+  | 'cim'
   | 'test'
   | 'notes'
   | 'history'
@@ -33,9 +34,10 @@ export const EDITOR_NAV_ITEMS: { key: SectionKey; label: string; num: string }[]
   { key: 'basic', label: '기본 정보', num: '1' },
   { key: 'xea', label: 'XEA 상세', num: '2' },
   { key: 'xes', label: 'XES 상세', num: '3' },
-  { key: 'test', label: 'Test Version', num: '4' },
-  { key: 'notes', label: 'Important Notes', num: '5' },
-  { key: 'history', label: '업데이트 이력', num: '6' },
+  { key: 'cim', label: 'CIM 상세', num: '4' },
+  { key: 'test', label: 'Test Version', num: '5' },
+  { key: 'notes', label: 'Important Notes', num: '6' },
+  { key: 'history', label: '업데이트 이력', num: '7' },
   { key: 'generate', label: '생성 & 다운로드', num: '✓' },
 ];
 

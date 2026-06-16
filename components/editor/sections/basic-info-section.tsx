@@ -69,6 +69,11 @@ export function BasicInfoSection({
         </p>
       </div>
 
+      <div className="mb-5 rounded-xl border border-park-border bg-park-surface px-4 py-3 text-sm leading-relaxed text-slate-600">
+        신규 작성 시 상단의 <span className="font-semibold text-park-navy">[새로 만들기]</span>를
+        클릭하세요. 업데이트 이력에 최신 내역이 자동으로 누적됩니다.
+      </div>
+
       <section className={sectionCardClass}>
         <h2 className={sectionTitleClass}>📋 기본 정보</h2>
 
