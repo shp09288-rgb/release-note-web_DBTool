@@ -76,6 +76,15 @@ export async function POST(req: Request) {
         desc: String(row?.desc || ''),
         sort_order: idx,
       })),
+      ...asArray<any>(body.cimDetails).map((row, idx) => ({
+        note_id: noteId,
+        type: 'cim',
+        ref: String(row?.ref || ''),
+        category: String(row?.category || ''),
+        title: String(row?.title || ''),
+        desc: String(row?.desc || ''),
+        sort_order: idx,
+      })),
       ...asArray<any>(body.testVersions).map((row, idx) => ({
         note_id: noteId,
         type: 'test',

@@ -16,6 +16,8 @@ export function getHighlightedSections(activeSection: SectionKey): PreviewSectio
       return ['xea'];
     case 'xes':
       return ['xes'];
+    case 'cim':
+      return ['cim'];
     case 'test':
       return ['test'];
     case 'notes':
@@ -23,7 +25,7 @@ export function getHighlightedSections(activeSection: SectionKey): PreviewSectio
     case 'history':
       return ['history'];
     case 'generate':
-      return ['header', 'overview', 'xea', 'xes', 'test', 'notes', 'history'];
+      return ['header', 'overview', 'xea', 'xes', 'cim', 'test', 'notes', 'history'];
     default:
       return [];
   }

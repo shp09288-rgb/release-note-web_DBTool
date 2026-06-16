@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { EDITOR_NAV_ITEMS, type SectionKey } from './types';
 
 type EditorSidebarProps = {
@@ -37,14 +36,6 @@ export function EditorSidebar({ activeSection, onSectionChange }: EditorSidebarP
           );
         })}
       </nav>
-      <div className="px-4 pb-4">
-        <Link
-          href="/dashboard"
-          className="block rounded-lg bg-[#6F42C1] px-3 py-2.5 text-center text-xs font-bold text-white transition hover:brightness-110"
-        >
-          설비 대시보드
-        </Link>
-      </div>
     </aside>
   );
 }

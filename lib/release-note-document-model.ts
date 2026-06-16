@@ -5,6 +5,7 @@ export type DocumentSectionId =
   | 'overview'
   | 'xea'
   | 'xes'
+  | 'cim'
   | 'test'
   | 'notes'
   | 'history';
@@ -21,6 +22,7 @@ export interface ReleaseNoteDocumentInput {
   overview: string[];
   xeaDetails: DetailRow[];
   xesDetails: DetailRow[];
+  cimDetails: DetailRow[];
   testVersions: DetailRow[];
   notes: NoteRow[];
   history: HistoryRow[];
@@ -38,6 +40,7 @@ export interface ReleaseNoteDocument {
   overview: string[];
   xeaDetails: DetailRow[];
   xesDetails: DetailRow[];
+  cimDetails: DetailRow[];
   testVersions: DetailRow[];
   notes: NoteRow[];
   history: HistoryRow[];
@@ -87,7 +90,7 @@ export type DocumentSection =
       payload: OverviewSectionPayload;
     }
   | {
-      id: 'xea' | 'xes' | 'test';
+      id: 'xea' | 'xes' | 'cim' | 'test';
       kind: 'systemDetail';
       sectionTitle?: string;
       subTitle?: string;
@@ -215,6 +218,7 @@ export function normalizeReleaseNoteDocument(input: ReleaseNoteDocumentInput): R
     overview: Array.isArray(input.overview) ? input.overview.map(String) : [],
     xeaDetails: Array.isArray(input.xeaDetails) ? input.xeaDetails : [],
     xesDetails: Array.isArray(input.xesDetails) ? input.xesDetails : [],
+    cimDetails: Array.isArray(input.cimDetails) ? input.cimDetails : [],
     testVersions: Array.isArray(input.testVersions) ? input.testVersions : [],
     notes: Array.isArray(input.notes) ? input.notes : [],
     history: Array.isArray(input.history) ? input.history : [],
@@ -257,7 +261,7 @@ export function buildDocumentSections(document: ReleaseNoteDocument): DocumentSe
   ];
 
   const systemDetailDefs: Array<{
-    id: 'xea' | 'xes' | 'test';
+    id: 'xea' | 'xes' | 'cim' | 'test';
     subTitle: string;
     label: string;
     before: string;
@@ -281,8 +285,16 @@ export function buildDocumentSections(document: ReleaseNoteDocument): DocumentSe
       items: document.xesDetails,
     },
     {
+      id: 'cim',
+      subTitle: '2.3 CIM',
+      label: 'CIM',
+      before: '-',
+      after: document.cimVer,
+      items: document.cimDetails,
+    },
+    {
       id: 'test',
-      subTitle: '2.3 Test Version',
+      subTitle: '2.4 Test Version',
       label: 'Test Version',
       before: TEST_VERSION_RANGE.before,
       after: TEST_VERSION_RANGE.after,

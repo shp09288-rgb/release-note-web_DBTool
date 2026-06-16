@@ -64,7 +64,7 @@ CREATE OR REPLACE TRIGGER trg_overview_items_updated_at
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ============================================================
--- 3. detail_rows  (type: 'xea' | 'xes' | 'test')
+-- 3. detail_rows  (type: 'xea' | 'xes' | 'cim' | 'test')
 -- ============================================================
 CREATE TABLE IF NOT EXISTS detail_rows (
   id          UUID        NOT NULL DEFAULT gen_random_uuid(),
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS detail_rows (
     REFERENCES notes (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
-  CONSTRAINT detail_rows_type_check CHECK (type IN ('xea', 'xes', 'test'))
+  CONSTRAINT detail_rows_type_check CHECK (type IN ('xea', 'xes', 'cim', 'test'))
 );
 
 CREATE OR REPLACE TRIGGER trg_detail_rows_updated_at
@@ -279,6 +279,21 @@ BEGIN
     INSERT INTO detail_rows (note_id, type, ref, category, title, "desc", sort_order)
     VALUES (
       v_note_id, 'xes',
+      COALESCE(item->>'ref', ''),
+      COALESCE(item->>'category', ''),
+      COALESCE(item->>'title', ''),
+      COALESCE(item->>'desc', ''),
+      idx
+    );
+    idx := idx + 1;
+  END LOOP;
+
+  idx := 0;
+  FOR item IN SELECT value FROM jsonb_array_elements(COALESCE(payload->'cimDetails', '[]'::jsonb))
+  LOOP
+    INSERT INTO detail_rows (note_id, type, ref, category, title, "desc", sort_order)
+    VALUES (
+      v_note_id, 'cim',
       COALESCE(item->>'ref', ''),
       COALESCE(item->>'category', ''),
       COALESCE(item->>'title', ''),

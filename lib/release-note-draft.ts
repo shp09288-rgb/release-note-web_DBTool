@@ -20,6 +20,7 @@ export interface ReleaseNoteDraft {
   overview: string[];
   xeaDetails: DetailRow[];
   xesDetails: DetailRow[];
+  cimDetails: DetailRow[];
   testVersions: DetailRow[];
   notes: NoteRow[];
   history: HistoryRow[];
@@ -55,6 +56,7 @@ export function loadReleaseNoteDraft(
       overview: Array.isArray(parsed.overview) ? parsed.overview.map(String) : [''],
       xeaDetails: Array.isArray(parsed.xeaDetails) ? parsed.xeaDetails : [],
       xesDetails: Array.isArray(parsed.xesDetails) ? parsed.xesDetails : [],
+      cimDetails: Array.isArray(parsed.cimDetails) ? parsed.cimDetails : [],
       testVersions: Array.isArray(parsed.testVersions) ? parsed.testVersions : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       history: Array.isArray(parsed.history) ? parsed.history : [],
@@ -84,6 +86,7 @@ export function saveReleaseNoteDraft(
     overview: draft.overview,
     xeaDetails: draft.xeaDetails,
     xesDetails: draft.xesDetails,
+    cimDetails: draft.cimDetails,
     testVersions: draft.testVersions,
     notes: draft.notes,
     history: draft.history,
@@ -119,6 +122,7 @@ export function hasDraftContent(draft: ReleaseNoteDraft) {
   const hasDetails =
     draft.xeaDetails.length > 0 ||
     draft.xesDetails.length > 0 ||
+    draft.cimDetails.length > 0 ||
     draft.testVersions.length > 0;
   const hasNotes = draft.notes.length > 0;
   const hasHistory = draft.history.length > 0;

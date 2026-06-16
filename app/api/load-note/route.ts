@@ -63,6 +63,7 @@ function emptyData(site: string, equipment: string) {
     overview: [''],
     xeaDetails: [],
     xesDetails: [],
+    cimDetails: [],
     testVersions: [],
     notes: [],
     history: [],
@@ -156,6 +157,14 @@ export async function POST(req: Request) {
           })),
         xesDetails: detailRows
           .filter((row) => row.type === 'xes')
+          .map((row) => ({
+            ref: row.ref ?? '',
+            category: row.category ?? 'Improvement',
+            title: row.title ?? '',
+            desc: row.desc ?? '',
+          })),
+        cimDetails: detailRows
+          .filter((row) => row.type === 'cim')
           .map((row) => ({
             ref: row.ref ?? '',
             category: row.category ?? 'Improvement',
