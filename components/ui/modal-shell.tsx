@@ -10,6 +10,7 @@ type ModalShellProps = {
   children: ReactNode;
   footer: ReactNode;
   showLogo?: boolean;
+  maxWidthClassName?: string;
 };
 
 export function ModalShell({
@@ -20,6 +21,7 @@ export function ModalShell({
   children,
   footer,
   showLogo = true,
+  maxWidthClassName = 'max-w-md',
 }: ModalShellProps) {
   const titleId = useId();
 
@@ -47,7 +49,7 @@ export function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-park-border bg-white shadow-xl sm:rounded-2xl"
+        className={`max-h-[90vh] w-full ${maxWidthClassName} overflow-y-auto rounded-t-2xl border border-park-border bg-white shadow-xl sm:rounded-2xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="border-b border-park-border bg-gradient-to-r from-park-navy to-[#2E5FA3] px-5 py-4 text-white">
