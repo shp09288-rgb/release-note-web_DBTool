@@ -1,5 +1,6 @@
 import {
   btnDanger,
+  btnOutline,
   cellInputClass,
   emptyTdClass,
   sectionCardClass,
@@ -20,6 +21,8 @@ type DetailTableSectionProps = {
   titlePlaceholder?: string;
   descPlaceholder?: string;
   onAdd: () => void;
+  onBulkPaste?: () => void;
+  bulkPasteLabel?: string;
   onUpdate: (index: number, field: keyof DetailRow, value: string) => void;
   onRemove: (index: number) => void;
   onSave: () => void;
@@ -36,6 +39,8 @@ export function DetailTableSection({
   titlePlaceholder = '항목 제목',
   descPlaceholder = '고객용 설명',
   onAdd,
+  onBulkPaste,
+  bulkPasteLabel = '📋 일괄 붙여넣기',
   onUpdate,
   onRemove,
   onSave,
@@ -48,8 +53,19 @@ export function DetailTableSection({
     <section className={sectionCardClass}>
       <h2 className={sectionTitleClass}>{title}</h2>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <SectionAddButton label="+ 항목 추가" onClick={onAdd} readOnly={readOnly} />
+        {onBulkPaste ? (
+          <button
+            type="button"
+            onClick={onBulkPaste}
+            disabled={readOnly}
+            title={readOnly ? '다른 사용자가 수정 중입니다' : undefined}
+            className={btnOutline}
+          >
+            {bulkPasteLabel}
+          </button>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-park-border">

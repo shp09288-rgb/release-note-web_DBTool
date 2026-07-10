@@ -20,6 +20,7 @@ import type {
   ReleaseNotePreviewData,
 } from '@/components/editor/preview/preview-types';
 import { normalizeReleaseNoteDocument } from '@/lib/release-note-document-model';
+import { BulkDetailImportModal } from '@/components/editor/bulk-detail-import-modal';
 import { BasicInfoSection } from '@/components/editor/sections/basic-info-section';
 import { DetailTableSection } from '@/components/editor/sections/detail-table-section';
 import { GenerateSection } from '@/components/editor/sections/generate-section';
@@ -35,6 +36,7 @@ import {
   type SectionKey,
 } from '@/components/editor/types';
 import { clearReleaseNoteDraft, type ReleaseNoteDraft } from '@/lib/release-note-draft';
+import type { BulkParseWarning } from '@/lib/release-note-bulk-parser';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { TextInputModal } from '@/components/ui/text-input-modal';
 
@@ -44,6 +46,8 @@ interface Props {
     equipment: string;
   }>;
 }
+
+type BulkImportTarget = 'xea' | 'xes' | 'cim';
 
 export default function EditorPage({ params }: Props) {
   const router = useRouter();
@@ -80,6 +84,7 @@ export default function EditorPage({ params }: Props) {
     | { open: false }
     | { open: true; mode: 'initial' | 'change'; defaultValue: string }
   >({ open: false });
+  const [bulkImportTarget, setBulkImportTarget] = useState<BulkImportTarget | null>(null);
 
   const showToast = useCallback((message: string, type: NonNullable<ToastState>['type']) => {
     setToast({ message, type });
@@ -477,6 +482,36 @@ export default function EditorPage({ params }: Props) {
     setter((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleBulkApply = (rows: DetailRow[], warnings: BulkParseWarning[]) => {
+    if (!bulkImportTarget) return;
+
+    switch (bulkImportTarget) {
+      case 'xea':
+        setXeaDetails((prev) => [...prev, ...rows]);
+        break;
+      case 'xes':
+        setXesDetails((prev) => [...prev, ...rows]);
+        break;
+      case 'cim':
+        setCimDetails((prev) => [...prev, ...rows]);
+        break;
+      default:
+        return;
+    }
+
+    markDirty();
+    setBulkImportTarget(null);
+
+    if (warnings.length > 0) {
+      showToast(
+        `${rows.length}개 항목이 추가되었습니다. 중복 Reference ${warnings.length}건이 있습니다.`,
+        'info'
+      );
+    } else {
+      showToast(`${rows.length}개 항목이 추가되었습니다.`, 'success');
+    }
+  };
+
   const addNoteRow = () => {
     setNotes((prev) => [...prev, { icon: '!', text: '' }]);
   };
@@ -703,6 +738,7 @@ export default function EditorPage({ params }: Props) {
               rows={xeaDetails}
               readOnly={readOnly}
               onAdd={() => addDetailRow(setXeaDetails)}
+              onBulkPaste={() => setBulkImportTarget('xea')}
               onUpdate={(index, field, value) => updateDetailRow(setXeaDetails, index, field, value)}
               onRemove={(index) => removeDetailRow(setXeaDetails, index)}
               onSave={saveCurrent}
@@ -718,6 +754,7 @@ export default function EditorPage({ params }: Props) {
               rows={xesDetails}
               readOnly={readOnly}
               onAdd={() => addDetailRow(setXesDetails)}
+              onBulkPaste={() => setBulkImportTarget('xes')}
               onUpdate={(index, field, value) => updateDetailRow(setXesDetails, index, field, value)}
               onRemove={(index) => removeDetailRow(setXesDetails, index)}
               onSave={saveCurrent}
@@ -733,6 +770,7 @@ export default function EditorPage({ params }: Props) {
               rows={cimDetails}
               readOnly={readOnly}
               onAdd={() => addDetailRow(setCimDetails)}
+              onBulkPaste={() => setBulkImportTarget('cim')}
               onUpdate={(index, field, value) => updateDetailRow(setCimDetails, index, field, value)}
               onRemove={(index) => removeDetailRow(setCimDetails, index)}
               onSave={saveCurrent}
@@ -825,6 +863,30 @@ export default function EditorPage({ params }: Props) {
         submitLabel="확인"
         onSubmit={handleUserNameModalSubmit}
         onCancel={handleUserNameModalCancel}
+      />
+
+      <BulkDetailImportModal
+        open={bulkImportTarget !== null}
+        targetLabel={
+          bulkImportTarget === 'xea'
+            ? 'XEA 상세'
+            : bulkImportTarget === 'xes'
+              ? 'XES 상세'
+              : bulkImportTarget === 'cim'
+                ? 'CIM 상세'
+                : ''
+        }
+        existingRows={
+          bulkImportTarget === 'xea'
+            ? xeaDetails
+            : bulkImportTarget === 'xes'
+              ? xesDetails
+              : bulkImportTarget === 'cim'
+                ? cimDetails
+                : []
+        }
+        onClose={() => setBulkImportTarget(null)}
+        onApply={handleBulkApply}
       />
 
       <ConfirmModal
