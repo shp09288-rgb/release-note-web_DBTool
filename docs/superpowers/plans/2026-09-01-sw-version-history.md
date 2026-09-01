@@ -738,10 +738,16 @@ function improvementsFrom(
     const list = node.nextAll('ul').first();
     if (!list.length) return;
 
+    // <li> 안의 <br> 은 저자가 의도한 줄바꿈이다. 픽스처의 p4552 XES 그룹은
+    // <li> 가 3개인데 세 번째가 <br> 로 두 개의 개선 사항을 담고 있다.
+    // 쪼개지 않으면 tidy() 가 공백을 접으면서 두 문장이 한 줄로 뒤엉킨다.
     const lines: string[] = [];
     list.children('li').each((_, li) => {
-      const text = tidy($(li).text());
-      if (text) lines.push(text);
+      const html = $(li).html() ?? '';
+      for (const part of html.split(/<br\s*\/?>/i)) {
+        const text = tidy(cheerio.load(part).root().text());
+        if (text) lines.push(text);
+      }
     });
 
     if (lines.length) groups.push({ component, lines });
