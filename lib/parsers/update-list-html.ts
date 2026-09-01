@@ -5,6 +5,7 @@ import type {
   ParsedHeader,
   ParsedItem,
   ParsedImprovement,
+  ParsedAlarm,
   ParseWarning,
 } from '@/lib/parsers/types';
 
@@ -227,6 +228,32 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
       });
     });
   });
+  // --- 신규 Alarm 표 ---
+  // .item 이 아니라 table 이다. 알람 ID 는 .pill 에 들어 있다.
+  const alarms: ParsedAlarm[] = [];
 
-  return { header, legend, items, alarms: [], warnings };
+  $('section table tr').each((_, rowEl) => {
+    const row = $(rowEl);
+    if (row.find('th').length) return; // 헤더 행
+
+    const alarmId = tidy(row.find('.pill').first().text());
+    if (!/^\d+$/.test(alarmId)) return;
+
+    const cells = row.find('td');
+    // <br> 로 나뉜 텍스트를 공백으로 연결한다. improvementsFrom 과 같은 패턴.
+    const html = cells.eq(1).html() ?? '';
+    const textParts: string[] = [];
+    html.split(/<br\s*\/?>/i).forEach((part) => {
+      const text = tidy($.load(`<span>${part}</span>`)('span').text());
+      if (text) textParts.push(text);
+    });
+    const text = textParts.join(' ');
+
+    const href = cells.eq(2).find('a.pms').attr('href') ?? '';
+    const match = href.match(/(\d+)\s*$/);
+
+    alarms.push({ alarmId, text, pmsNo: match ? Number(match[1]) : null });
+  });
+
+  return { header, legend, items, alarms, warnings };
 }

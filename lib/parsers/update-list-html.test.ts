@@ -171,3 +171,28 @@ describe('parseUpdateListHtml — 항목 견고성', () => {
     expect(doc.items[0].anchorId).toBeTruthy();
   });
 });
+
+describe('parseUpdateListHtml — 신규 Alarm', () => {
+  let doc: ParsedDocument;
+  beforeAll(() => {
+    doc = parseUpdateListHtml(readFileSync(FIXTURE, 'utf-8'));
+  });
+
+  it('알람 3건을 읽는다', () => {
+    expect(doc.alarms).toHaveLength(3);
+  });
+
+  it('알람 ID 와 텍스트를 읽는다', () => {
+    const alarm = doc.alarms.find((a) => a.alarmId === '20144')!;
+    expect(alarm.text).toBe('[XYStage] : Air Pressure is abnormal. 불일치 축 / Clamp 정보 포함');
+  });
+
+  it('출처 PMS 번호를 링크에서 읽는다', () => {
+    const alarm = doc.alarms.find((a) => a.alarmId === '20158')!;
+    expect(alarm.pmsNo).toBe(4881);
+  });
+
+  it('헤더 행(th)을 알람으로 세지 않는다', () => {
+    expect(doc.alarms.every((a) => /^\d+$/.test(a.alarmId))).toBe(true);
+  });
+});
