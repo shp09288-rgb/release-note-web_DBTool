@@ -3,6 +3,8 @@ import { parseVersionRange } from '@/lib/version';
 import type {
   ParsedDocument,
   ParsedHeader,
+  ParsedItem,
+  ParsedImprovement,
   ParseWarning,
 } from '@/lib/parsers/types';
 
@@ -37,6 +39,63 @@ function metaValue($: cheerio.CheerioAPI, label: string): string {
     }
   });
   return found;
+}
+
+/** '#4552 CIM 불안정' 같은 헤딩에서 링크·배지를 뺀 순수 제목만 남긴다. */
+function headingTitle($: cheerio.CheerioAPI, heading: cheerio.Cheerio<any>): string {
+  const clone = heading.clone();
+  clone.find('a.pms, .chip').remove();
+  return tidy(clone.text());
+}
+
+/** href 의 마지막 숫자가 PMS 번호의 정본이다. 본문 텍스트보다 신뢰할 수 있다. */
+function pmsNumbersFrom($: cheerio.CheerioAPI, heading: cheerio.Cheerio<any>): number[] {
+  const numbers: number[] = [];
+  heading.find('a.pms').each((_, el) => {
+    const href = $(el).attr('href') ?? '';
+    const match = href.match(/(\d+)\s*$/);
+    if (match) numbers.push(Number(match[1]));
+  });
+  return numbers;
+}
+
+/**
+ * .grp.xea / .grp.xes 다음에 오는 ul 을 그 컴포넌트의 개선 목록으로 묶는다.
+ * 마크업이 중첩이 아니라 형제 나열이라 nextAll 로 훑어야 한다.
+ */
+function improvementsFrom(
+  $: cheerio.CheerioAPI,
+  item: cheerio.Cheerio<any>
+): ParsedImprovement[] {
+  const groups: ParsedImprovement[] = [];
+
+  item.find('.grp').each((_, el) => {
+    const node = $(el);
+    const classes = (node.attr('class') ?? '').split(/\s+/);
+    const component = classes.includes('xea')
+      ? 'xea'
+      : classes.includes('xes')
+        ? 'xes'
+        : null;
+    if (!component) return;
+
+    const list = node.nextAll('ul').first();
+    if (!list.length) return;
+
+    const lines: string[] = [];
+    list.children('li').each((_, li) => {
+      // <br> 로 나뉜 한 <li> 안의 여러 줄도 각각 별도 라인으로 센다.
+      const html = $(li).html() ?? '';
+      html.split(/<br\s*\/?>/i).forEach((part) => {
+        const text = tidy($.load(`<span>${part}</span>`)('span').text());
+        if (text) lines.push(text);
+      });
+    });
+
+    if (lines.length) groups.push({ component, lines });
+  });
+
+  return groups;
 }
 
 export function parseUpdateListHtml(html: string): ParsedDocument {
@@ -99,5 +158,75 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
     legend[cls] = tidy(clone.text());
   });
 
-  return { header, legend, items: [], alarms: [], warnings };
+  // --- 섹션과 항목 ---
+  const items: ParsedItem[] = [];
+
+  $('section[id^="s"]').each((_, sectionEl) => {
+    const section = $(sectionEl);
+    const heading = section.find('h2.s').first();
+    const sectionNo = Number(tidy(heading.find('.n').first().text()));
+
+    // 섹션 0은 표기 안내다. 항목이 아니다.
+    if (!Number.isFinite(sectionNo) || sectionNo === 0) return;
+
+    const headingClone = heading.clone();
+    headingClone.find('.n').remove();
+    const sectionName = tidy(headingClone.text());
+
+    section.find('.item').each((_, itemEl) => {
+      const item = $(itemEl);
+      const h3 = item.find('h3.s').first();
+
+      const numbers = pmsNumbersFrom($, h3);
+      const anchorId = h3.attr('id') ?? `s${sectionNo}-${items.length}`;
+
+      const phenClone = item.find('.phen').first().clone();
+      phenClone.find('b').remove();
+      const phenomenon = tidy(phenClone.text());
+
+      const improvements = improvementsFrom($, item);
+
+      const rawFlags = h3
+        .find('.chip')
+        .map((_, chip) =>
+          (($(chip).attr('class') ?? '').split(/\s+/).filter((c) => c && c !== 'chip'))[0]
+        )
+        .get()
+        .filter(Boolean) as string[];
+
+      // 원시 클래스는 그대로 두고, 의미는 문서의 범례에서 유도해 덧붙인다.
+      // 'prev' 라는 이름을 코드에 박으면 다음 문서가 다른 클래스를 쓸 때 깨진다.
+      const flags = [...rawFlags];
+      if (rawFlags.some((f) => (legend[f] ?? '').includes('미적용'))) {
+        flags.push('not_applied');
+      }
+      if (rawFlags.some((f) => (legend[f] ?? '').includes('요청'))) {
+        flags.push('site_requested');
+      }
+
+      const title = headingTitle($, h3);
+
+      items.push({
+        pmsNo: numbers[0] ?? null,
+        pmsExtra: numbers.slice(1),
+        anchorId,
+        section: sectionName,
+        sectionNo,
+        title,
+        phenomenon,
+        improvements,
+        flags,
+        bodyText: [
+          title,
+          phenomenon,
+          ...improvements.flatMap((g) => g.lines),
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        sortOrder: items.length,
+      });
+    });
+  });
+
+  return { header, legend, items, alarms: [], warnings };
 }
