@@ -271,7 +271,7 @@ export function parseVersionRange(input: string): VersionRange {
 - [ ] **Step 7: 테스트 통과 확인**
 
 Run: `npm test -- lib/version.test.ts`
-Expected: PASS — 13 tests
+Expected: PASS — 12 tests
 
 - [ ] **Step 8: 커밋**
 
@@ -423,15 +423,6 @@ describe('parseUpdateListHtml — 견고성', () => {
     expect(doc.header.site).toBeNull();
     expect(doc.warnings.length).toBeGreaterThan(0);
   });
-
-  it('구조가 깨진 항목에도 예외를 던지지 않는다', () => {
-    const doc = parseUpdateListHtml(
-      '<section id="s1"><h2 class="s"><span class="n">1</span>CIM</h2>' +
-        '<div class="item"><h3 class="s">제목만 있음</h3></div></section>'
-    );
-    expect(doc.items).toHaveLength(1);
-    expect(doc.items[0].pmsNo).toBeNull();
-  });
 });
 ```
 
@@ -553,9 +544,10 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 - [ ] **Step 6: 테스트 통과 확인**
 
 Run: `npm test -- lib/parsers`
-Expected: PASS — 헤더 5건, 범례 1건, 견고성 3건 중 "구조가 깨진 항목" 1건만 FAIL (항목 파싱이 Task 3)
+Expected: PASS — 헤더 5건, 범례 1건, 견고성 2건 = 8 tests
 
-`items` 관련 테스트 1건이 실패하는 것은 정상이다. Task 3에서 통과시킨다.
+항목 파싱은 Task 3이다. 이 태스크는 **실패하는 테스트를 남기지 않는다** —
+항목을 다루는 테스트는 Task 3에서 함께 추가한다.
 
 - [ ] **Step 7: 커밋**
 
@@ -671,6 +663,26 @@ describe('parseUpdateListHtml — 항목', () => {
     expect(doc.items.map((i) => i.sortOrder)).toEqual(
       doc.items.map((_, idx) => idx)
     );
+  });
+});
+
+describe('parseUpdateListHtml — 항목 견고성', () => {
+  it('구조가 깨진 항목에도 예외를 던지지 않는다', () => {
+    const doc = parseUpdateListHtml(
+      '<section id="s1"><h2 class="s"><span class="n">1</span>CIM</h2>' +
+        '<div class="item"><h3 class="s">제목만 있음</h3></div></section>'
+    );
+    expect(doc.items).toHaveLength(1);
+    expect(doc.items[0].pmsNo).toBeNull();
+    expect(doc.items[0].title).toBe('제목만 있음');
+  });
+
+  it('id 가 없는 헤딩에도 안정 앵커를 만든다', () => {
+    const doc = parseUpdateListHtml(
+      '<section id="s1"><h2 class="s"><span class="n">1</span>CIM</h2>' +
+        '<div class="item"><h3 class="s">제목만 있음</h3></div></section>'
+    );
+    expect(doc.items[0].anchorId).toBeTruthy();
   });
 });
 ```
@@ -924,7 +936,7 @@ git commit -m "feat: parse new-alarm table from update-list document"
 - Consumes: 없음
 - Produces: `extractPmsNumbers(text: string): number[]`
 
-레거시 요약 93건 중 48건에 `#숫자`가 들어 있다. 이걸 뽑아야 과거 배포도 PMS 역조회에 걸린다.
+레거시 요약 90건 중 46건에 `#숫자`가 들어 있다. 이걸 뽑아야 과거 배포도 PMS 역조회에 걸린다.
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
@@ -1756,7 +1768,7 @@ export async function searchItems(query: string): Promise<SearchHit[]> {
  *
  * upsert 의 on_conflict 를 쓰지 않고 직접 찾아서 갱신한다. PostgREST 의
  * on_conflict 는 컬럼 목록만 받아 인덱스 이름을 지정할 수 없고, NULL 이 섞인
- * 식별자에서 동작이 미묘하다. 93건 규모라 조회 한 번이 비싸지 않다.
+ * 식별자에서 동작이 미묘하다. 90건 규모라 조회 한 번이 비싸지 않다.
  */
 export async function insertDeployment(draft: DeploymentDraft): Promise<string> {
   const supabase = createServerClient();
@@ -1971,7 +1983,7 @@ describe('toDrafts', () => {
     const total = files
       .flatMap(toDrafts)
       .filter((d) => (d.legacyPmsRefs ?? []).length > 0);
-    expect(total.length).toBe(48);
+    expect(total.length).toBe(46);
   });
 
   it('모든 배포의 source_kind 가 legacy_json 이다', () => {
@@ -1981,10 +1993,10 @@ describe('toDrafts', () => {
 });
 
 describe('buildReport', () => {
-  it('전체 93건을 센다', () => {
+  it('전체 90건을 센다', () => {
     const drafts = loadLegacyFiles(DATA_DIR).flatMap(toDrafts);
     const report = buildReport(drafts);
-    expect(report.total).toBe(93);
+    expect(report.total).toBe(90);
     expect(report.bySite['SDC A6']).toBe(58);
     expect(report.bySite['LGD AP3']).toBe(23);
   });
@@ -2217,7 +2229,7 @@ if (process.argv[1] && process.argv[1].includes('migrate-legacy')) {
 npm run migrate-legacy
 ```
 
-Expected: 리포트 출력. `총 배포 : 93`, `설비별 : { 'SDC A6': 58, 'LGD AP3': 23, 'SDC A5': 5, 'LGD AP4': 3, 'LGD AP5': 1 }`
+Expected: 리포트 출력. `총 배포 : 90`, `설비별 : { 'SDC A6': 58, 'LGD AP3': 23, 'SDC A5': 5, 'LGD AP4': 3, 'LGD AP5': 1 }`
 
 - [ ] **Step 9: 멱등성 확인 — 한 번 더 돌린다**
 
@@ -2231,7 +2243,7 @@ Supabase SQL Editor에서:
 SELECT count(*) FROM deployments;
 ```
 
-Expected: `93` (두 번 돌려도 그대로)
+Expected: `90` (두 번 돌려도 그대로)
 
 - [ ] **Step 10: 커밋**
 
@@ -3714,7 +3726,7 @@ SELECT count(*) AS items FROM deployment_items;
 SELECT count(*) AS refs FROM deployment_pms_refs;
 ```
 
-Expected: deployments ≥ 93, items ≥ 8, refs > 0
+Expected: deployments ≥ 90, items ≥ 8, refs > 0
 
 - [ ] **Step 2: 에디터·작성 API 삭제**
 
@@ -3722,22 +3734,32 @@ Expected: deployments ≥ 93, items ≥ 8, refs > 0
 git rm -r "app/editor" "components/editor"
 git rm -r "app/api/create-note" "app/api/delete-note" "app/api/list-notes" "app/api/load-note" "app/api/rename-note" "app/api/generate-docx" "app/api/test-save"
 git rm -r "app/api/acquire-lock" "app/api/release-lock" "app/api/lock-status"
-git rm "lib/lock-utils.ts"
+git rm "lib/lock-utils.ts" "lib/note-utils.ts"
 ```
+
+`lib/note-utils.ts`는 위에서 지우는 note API 들과 `lock-utils.ts` 만 쓰던
+파일이라 함께 사라져야 한다.
 
 - [ ] **Step 3: 구 대시보드 삭제**
 
 새 홈(`/`)이 설비 목록이므로 구 대시보드는 필요 없다.
 
+`components/dashboard/` **전체를 지운다.** Task 11의 `equipment-summary-card`는
+Park Systems 클래스(`park-navy`, `park-border`)를 직접 쓰고 이 디렉터리에서
+아무것도 import 하지 않는다. `app/dashboard`와 `app/editor`가 사라지면 이
+디렉터리 12개 파일은 전부 고아가 된다. 남겨두면 다음 사람이 어느 카드가
+진짜인지 헷갈린다.
+
 ```bash
 git rm -r "app/dashboard"
+git rm -r "components/dashboard"
 git rm "components/DashboardCard.tsx"
 ```
 
-`components/dashboard/`는 남긴다 — Task 11이 스타일을 참조한다. 사용되지 않는 파일만 정리한다:
+`components/forms/form-classes.ts`도 `components/editor/`만 쓰던 파일이라 함께 지운다:
 
 ```bash
-git rm "components/dashboard/equipment-card.tsx" "components/dashboard/note-modal.tsx" "components/dashboard/status-badge.tsx" "components/dashboard/dashboard-actions.tsx" "components/dashboard/types.ts"
+git rm -r "components/forms"
 ```
 
 - [ ] **Step 4: 리포지토리 쓰레기 정리**

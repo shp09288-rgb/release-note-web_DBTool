@@ -24,7 +24,7 @@
 2. PMS 번호나 키워드로 검색하면 그 개선이 **어느 사이트 · 어느 버전 · 언제**
    들어갔는지 나온다.
 3. 유관부서가 준 HTML 문서를 첨부하면 파싱해서 이력에 편입된다.
-4. 기존에 누적된 이력(93건)이 그대로 살아 있다.
+4. 기존에 누적된 이력(90건)이 그대로 살아 있다.
 
 ## 범위 밖
 
@@ -125,7 +125,7 @@ dashboard_settings              유지. 업로드 비밀번호
 
 ### 1.3 레거시 PMS 역조회
 
-레거시 요약 텍스트 93건 중 **48건에 `#숫자` 형태의 PMS 번호가 있고, 서로 다른
+레거시 요약 텍스트 90건 중 **46건에 `#숫자` 형태의 PMS 번호가 있고, 서로 다른
 번호가 72개** 나온다. 이걸 버리면 "#2932가 언제 어디 들어갔나"에 답할 수 없다.
 
 정규식으로 뽑아 `deployment_pms_refs`에 `source='legacy_text'`로 넣는다.
@@ -227,12 +227,17 @@ dashboard_settings              유지. 업로드 비밀번호
 | `/upload` | 업로드 + 미리보기 편집 | 3장 참조. 비밀번호 필요 |
 | `/deployment/[id]` | 원문 보기 | 저장된 `raw_html`을 그대로 렌더 |
 
-기존 `components/dashboard/`의 `equipment-card` · `stat-card` ·
-`dashboard-toolbar` · `dashboard-toast`와 Park Systems 스타일은 재사용한다.
+**재사용하는 것은 Park Systems 스타일(`park-navy`·`park-border` 등)과 카드
+레이아웃 관습이지, `components/dashboard/`의 컴포넌트 자체가 아니다.**
+
+그쪽 `equipment-card`는 편집 락(`lockUser`·`lockStale`)과 `latest.json` 유무를
+표시하는 `Item` 타입에 묶여 있다. 조회 도구에는 락도 `latest.json`도 없다.
+타입을 억지로 맞추면 죽은 필드가 따라온다. 새 `components/history/`에 같은
+생김새로 다시 만들고, `components/dashboard/`는 6장에서 통째로 지운다.
 
 ### 4.1 검색은 단순하게
 
-배포 93건 + 항목 수백 건 규모에서 `pms_no` 정확 매칭 + `title`·`phenomenon`·
+배포 90건 + 항목 수백 건 규모에서 `pms_no` 정확 매칭 + `title`·`phenomenon`·
 `body_text`에 대한 `ILIKE`면 충분하다. 한국어는 Postgres 전문검색 토크나이저가
 약해서 `tsvector`를 붙여도 이득이 없고 복잡도만 는다.
 
@@ -367,9 +372,11 @@ scripts/*.json                            data/와 완전 중복
 | SDC A5 | 5 |
 | LGD AP4 | 3 |
 | LGD AP5 | 1 |
-| **합계** | **93** |
+| **합계** | **90** |
 
-PMS 번호 포함 배포 48건, 서로 다른 번호 72개.
+PMS 번호 포함 배포 46건, 서로 다른 번호 72개.
+
+중복 파일 `LGD AP4_EQ01.json`(공백)을 제외한 5개 파일 기준이다.
 
 ---
 
@@ -380,7 +387,7 @@ PMS 번호 포함 배포 48건, 서로 다른 번호 72개.
 - **파서 견고성**: 헤더가 없는 HTML, 항목이 0개인 HTML, `.item` 구조가 깨진
   HTML을 넣어도 **예외 없이** 경고와 부분 결과를 반환하는지.
 - **`parseBuild()`**: 위 6가지 표기 변종 전부.
-- **이관 스크립트**: 두 번 돌려도 `deployments` 건수가 93 그대로인지.
+- **이관 스크립트**: 두 번 돌려도 `deployments` 건수가 90 그대로인지.
 - **검색**: PMS 번호 정확 매칭, 한글 키워드 부분 매칭.
 
 ## 9. 접근 제어
