@@ -15,6 +15,22 @@ describe('parseOriginSite', () => {
   it('사이트를 못 찾으면 null', () => {
     expect(parseOriginSite('그냥 제목')).toBeNull();
   });
+
+  it('장비 모델 코드만 있으면 null — NX-TSH1518 은 사이트가 아니다', () => {
+    expect(parseOriginSite('NX-TSH1518 #1 /[PMS] CIM 불안정 건')).toBeNull();
+  });
+
+  it('모델 코드가 본문 중간에 있어도 null', () => {
+    expect(parseOriginSite('AFM 장비 NX-TSH1518 오류')).toBeNull();
+  });
+
+  it('대괄호 안이 모델 코드면 null', () => {
+    expect(parseOriginSite('[NX-TSH1518] #1 some subject')).toBeNull();
+  });
+
+  it('LGD 사이트는 벤더+팹 전체를 뽑는다', () => {
+    expect(parseOriginSite('LGD AP3 / 설비 이슈')).toBe('LGD AP3');
+  });
 });
 
 describe('pickCustomField', () => {

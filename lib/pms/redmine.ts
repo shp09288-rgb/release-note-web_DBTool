@@ -18,7 +18,7 @@ export type PmsIssue = {
   closedOn: string | null;
 };
 
-const SITE = /([A-Z]{2,4}\s?[A-Z]?\d{1,2})/;
+const SITE = /(?<![A-Za-z0-9-])([A-Z]{2,4}\s[A-Z]{1,2}\d{1,2})(?!\d)/;
 
 /**
  * Redmine 제목에서 이슈가 발생한 사이트를 뽑는다.
