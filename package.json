@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "import-data": "tsx scripts/import-json-to-supabase.ts",
+    "migrate-legacy": "tsx scripts/migrate-legacy.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
