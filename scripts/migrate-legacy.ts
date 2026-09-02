@@ -136,6 +136,18 @@ export function buildReport(drafts: DeploymentDraft[]): MigrationReport {
   return { total: drafts.length, bySite, unparsedVersions, withPmsRefs, gaps: [] };
 }
 
+/**
+ * 검증 결과로 이관을 중단해야 하는지 판단한다.
+ *
+ * 후보가 있는데 유효한 게 하나도 없으면 십중팔구 Redmine 접속 실패다
+ * (VPN 끊김, 키 만료, 서버 재기동 등) — 진짜로 모든 번호가 가짜일 가능성보다
+ * 훨씬 높다. fetchIssue 는 모든 실패를 null 로 뭉뚱그리므로 이 둘을 구분할
+ * 수 없다. 그래서 이 경우엔 아예 쓰지 않고 멈춘다.
+ */
+export function shouldAbortOnValidation(candidateCount: number, validCount: number): boolean {
+  return candidateCount > 0 && validCount === 0;
+}
+
 /** DB 에 쓰는 부분. 위 순수 함수들과 분리해 둔다. */
 async function runMigration() {
   const { insertDeployment } = await import('@/lib/queries/deployments');
@@ -156,7 +168,17 @@ async function runMigration() {
     const issue = await fetchIssue(id);
     if (issue) valid.add(id);
   }
-  console.log(`[migrate] 유효 ${valid.size}개 / 버림 ${candidates.size - valid.size}개`);
+  const discarded = candidates.size - valid.size;
+  console.log(`[migrate] 유효 ${valid.size}개 / 버림 ${discarded}개`);
+
+  if (shouldAbortOnValidation(candidates.size, valid.size)) {
+    console.error(
+      `[migrate] 중단: PMS 후보 ${candidates.size}개 중 검증된 게 하나도 없습니다. ` +
+        `모든 번호가 가짜일 가능성보다 Redmine 접속 실패(VPN, PMS_API_KEY, 서버 상태)일 ` +
+        `가능성이 훨씬 높습니다. 연결 상태를 확인한 뒤 다시 실행하세요. 아무것도 쓰지 않았습니다.`
+    );
+    process.exit(1);
+  }
 
   let written = 0;
   for (const draft of drafts) {
@@ -172,6 +194,7 @@ async function runMigration() {
   console.log(`설비별         :`, report.bySite);
   console.log(`버전 파싱 실패 : ${report.unparsedVersions}`);
   console.log(`PMS 참조 보유  : ${report.withPmsRefs}건`);
+  console.log(`PMS 후보 검증  : 후보 ${candidates.size}개 중 유효 ${valid.size}개, 버림 ${discarded}개`);
 }
 
 if (process.argv[1] && process.argv[1].includes('migrate-legacy')) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
-import { loadLegacyFiles, toDrafts, buildReport } from '@/scripts/migrate-legacy';
+import { loadLegacyFiles, toDrafts, buildReport, shouldAbortOnValidation } from '@/scripts/migrate-legacy';
 
 const DATA_DIR = path.resolve(__dirname, '../data');
 
@@ -72,5 +72,19 @@ describe('buildReport', () => {
   it('빌드 번호를 못 읽은 건수를 센다', () => {
     const drafts = loadLegacyFiles(DATA_DIR).flatMap(toDrafts);
     expect(buildReport(drafts).unparsedVersions).toBeGreaterThan(0);
+  });
+});
+
+describe('shouldAbortOnValidation', () => {
+  it('후보가 없으면 abort 하지 않는다', () => {
+    expect(shouldAbortOnValidation(0, 0)).toBe(false);
+  });
+
+  it('일부라도 유효하면 abort 하지 않는다', () => {
+    expect(shouldAbortOnValidation(72, 40)).toBe(false);
+  });
+
+  it('후보는 있는데 유효한 게 하나도 없으면 abort 한다', () => {
+    expect(shouldAbortOnValidation(72, 0)).toBe(true);
   });
 });
