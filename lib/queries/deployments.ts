@@ -14,6 +14,17 @@ const DEPLOYMENT_COLUMNS =
   'xes_from_raw, xes_from_build, xes_to_raw, xes_to_build, ' +
   'cim_ver, author, source_kind, source_file, body_text, edited_at, updated_at';
 
+/**
+ * PostgREST 의 `.or()` 는 인자를 콤마로 구분된 필터 목록으로 파싱한다.
+ * 검색어에 콤마·마침표·괄호가 섞이면 (한국어 현상 텍스트에 흔하다) 필터가
+ * 의도치 않게 쪼개지거나 400 을 유발한다. 값을 큰따옴표로 감싸면 이 문자들이
+ * 리터럴로 취급된다 — 그 안의 백슬래시와 큰따옴표만 이스케이프하면 된다.
+ */
+export function buildSearchOrFilter(term: string, columns: string[]): string {
+  const escaped = term.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return columns.map((col) => `${col}.ilike."%${escaped}%"`).join(',');
+}
+
 export async function listEquipment(): Promise<EquipmentSummary[]> {
   const supabase = createServerClient();
 
@@ -121,9 +132,7 @@ export async function searchItems(query: string): Promise<SearchHit[]> {
 
   itemQuery = asNumber
     ? itemQuery.eq('pms_no', asNumber)
-    : itemQuery.or(
-        `title.ilike.%${term}%,phenomenon.ilike.%${term}%,body_text.ilike.%${term}%`
-      );
+    : itemQuery.or(buildSearchOrFilter(term, ['title', 'phenomenon', 'body_text']));
 
   const { data: itemRows, error: itemError } = await itemQuery;
   if (itemError) throw new Error(itemError.message);
@@ -151,10 +160,11 @@ export async function searchItems(query: string): Promise<SearchHit[]> {
   let depQuery = supabase.from('deployments').select(DEPLOYMENT_COLUMNS).limit(200);
 
   if (asNumber) {
-    const { data: refs } = await supabase
+    const { data: refs, error: refsError } = await supabase
       .from('deployment_pms_refs')
       .select('deployment_id')
       .eq('pms_no', asNumber);
+    if (refsError) throw new Error(refsError.message);
     const ids = (refs ?? []).map((r: any) => r.deployment_id);
     if (!ids.length) return hits;
     depQuery = depQuery.in('id', ids);
@@ -263,9 +273,23 @@ export async function insertDeployment(draft: DeploymentDraft): Promise<string> 
   }
 
   // 자식 행은 통째로 갈아끼운다.
-  await supabase.from('deployment_items').delete().eq('deployment_id', deploymentId);
-  await supabase.from('deployment_alarms').delete().eq('deployment_id', deploymentId);
-  await supabase.from('deployment_pms_refs').delete().eq('deployment_id', deploymentId);
+  const { error: delItemsError } = await supabase
+    .from('deployment_items')
+    .delete()
+    .eq('deployment_id', deploymentId);
+  if (delItemsError) throw new Error(delItemsError.message);
+
+  const { error: delAlarmsError } = await supabase
+    .from('deployment_alarms')
+    .delete()
+    .eq('deployment_id', deploymentId);
+  if (delAlarmsError) throw new Error(delAlarmsError.message);
+
+  const { error: delRefsError } = await supabase
+    .from('deployment_pms_refs')
+    .delete()
+    .eq('deployment_id', deploymentId);
+  if (delRefsError) throw new Error(delRefsError.message);
 
   if (draft.items.length) {
     const { error: itemError } = await supabase.from('deployment_items').insert(
@@ -287,7 +311,7 @@ export async function insertDeployment(draft: DeploymentDraft): Promise<string> 
   }
 
   if (draft.alarms.length) {
-    await supabase.from('deployment_alarms').insert(
+    const { error: alarmError } = await supabase.from('deployment_alarms').insert(
       draft.alarms.map((a) => ({
         deployment_id: deploymentId,
         alarm_id: a.alarmId,
@@ -295,6 +319,7 @@ export async function insertDeployment(draft: DeploymentDraft): Promise<string> 
         pms_no: a.pmsNo,
       }))
     );
+    if (alarmError) throw new Error(alarmError.message);
   }
 
   // PMS 링크 — 항목/알람/레거시 텍스트를 한데 모아 중복 제거
@@ -311,13 +336,14 @@ export async function insertDeployment(draft: DeploymentDraft): Promise<string> 
   }
 
   if (refs.size) {
-    await supabase.from('deployment_pms_refs').insert(
+    const { error: refsInsertError } = await supabase.from('deployment_pms_refs').insert(
       [...refs.entries()].map(([pms_no, source]) => ({
         deployment_id: deploymentId,
         pms_no,
         source,
       }))
     );
+    if (refsInsertError) throw new Error(refsInsertError.message);
   }
 
   return deploymentId;
