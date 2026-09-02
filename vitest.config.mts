@@ -10,6 +10,7 @@ export default defineConfig({
     // 둘 다 Task 18 에서 지우는 작성 도구 코드의 테스트다.
     include: [
       'lib/version.test.ts',
+      'lib/timeline.test.ts',
       'lib/parsers/**/*.test.ts',
       'lib/queries/**/*.test.ts',
       'lib/pms/**/*.test.ts',
