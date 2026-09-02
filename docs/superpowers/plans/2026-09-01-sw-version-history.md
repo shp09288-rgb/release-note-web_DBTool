@@ -3202,7 +3202,7 @@ type ParseResponse = {
   ok: boolean;
   fileName: string;
   document: ParsedDocument;
-  duplicate: { id: string; deployed_on: string | null } | null;
+  duplicate: { id: string; deployedOn: string | null; message: string } | null;
   message?: string;
 };
 
