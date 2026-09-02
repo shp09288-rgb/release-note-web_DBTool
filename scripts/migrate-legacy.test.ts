@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
-import { loadLegacyFiles, toDrafts, buildReport, shouldAbortOnValidation } from '@/scripts/migrate-legacy';
+import {
+  loadLegacyFiles,
+  toDrafts,
+  buildReport,
+  shouldAbortOnValidation,
+  findMissingEnvVars,
+} from '@/scripts/migrate-legacy';
 
 const DATA_DIR = path.resolve(__dirname, '../data');
 
@@ -86,5 +92,30 @@ describe('shouldAbortOnValidation', () => {
 
   it('후보는 있는데 유효한 게 하나도 없으면 abort 한다', () => {
     expect(shouldAbortOnValidation(72, 0)).toBe(true);
+  });
+});
+
+describe('findMissingEnvVars', () => {
+  it('필요한 변수가 다 있으면 빈 배열을 돌려준다', () => {
+    const env = {
+      NEXT_PUBLIC_SUPABASE_URL: 'x',
+      SUPABASE_SERVICE_ROLE_KEY: 'y',
+      PMS_API_KEY: 'z',
+    };
+    expect(findMissingEnvVars(env)).toEqual([]);
+  });
+
+  it('없는 변수의 이름만 콕 집어 돌려준다', () => {
+    const env = { NEXT_PUBLIC_SUPABASE_URL: 'x' };
+    expect(findMissingEnvVars(env)).toEqual(['SUPABASE_SERVICE_ROLE_KEY', 'PMS_API_KEY']);
+  });
+
+  it('빈 문자열도 없는 것으로 친다', () => {
+    const env = {
+      NEXT_PUBLIC_SUPABASE_URL: '  ',
+      SUPABASE_SERVICE_ROLE_KEY: 'y',
+      PMS_API_KEY: 'z',
+    };
+    expect(findMissingEnvVars(env)).toEqual(['NEXT_PUBLIC_SUPABASE_URL']);
   });
 });

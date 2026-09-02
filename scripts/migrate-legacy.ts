@@ -1,9 +1,17 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { config as loadEnv } from 'dotenv';
 import { parseVersionRange } from '@/lib/version';
 import { extractPmsNumbers } from '@/lib/pms/extract';
 import type { DeploymentDraft } from '@/lib/queries/types';
 import type { ParsedImprovement } from '@/lib/parsers/types';
+
+// tsx 로 직접 실행하는 독립 스크립트라 Next.js 의 .env 자동 로딩이 없다.
+// 여기서 명시적으로 읽는다. .env 를 먼저 깔고 .env.local 로 덮어써서
+// Next.js 의 우선순위(.env.local 이 .env 를 이긴다)를 흉내낸다.
+// 이 두 줄은 DB/PMS 클라이언트를 동적 import 하기 전, 모듈 최상단에서 실행된다.
+loadEnv({ path: path.resolve(process.cwd(), '.env') });
+loadEnv({ path: path.resolve(process.cwd(), '.env.local'), override: true });
 
 type LegacyDetail = { ref?: string; category?: string; title?: string; desc?: string };
 
@@ -148,8 +156,38 @@ export function shouldAbortOnValidation(candidateCount: number, validCount: numb
   return candidateCount > 0 && validCount === 0;
 }
 
+/** 이관이 실제로 필요로 하는 환경변수 목록. */
+export const REQUIRED_MIGRATION_ENV_VARS = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'PMS_API_KEY',
+];
+
+/**
+ * 필요한 환경변수 중 비어 있는 것의 이름을 돌려준다.
+ *
+ * 키가 없으면 Redmine 요청이 전부 인증 없이 나가 거부되고, Supabase 키가
+ * 없으면 DB 클라이언트 생성 시점에 죽는다. 두 경우 다 "PMS 후보가 전부
+ * 가짜였다"와 증상이 똑같아 보이므로, 실제 원인을 첫 줄에서 바로 말해준다.
+ */
+export function findMissingEnvVars(
+  env: Record<string, string | undefined>,
+  required: string[] = REQUIRED_MIGRATION_ENV_VARS
+): string[] {
+  return required.filter((name) => !env[name]?.trim());
+}
+
 /** DB 에 쓰는 부분. 위 순수 함수들과 분리해 둔다. */
 async function runMigration() {
+  const missingEnv = findMissingEnvVars(process.env);
+  if (missingEnv.length) {
+    console.error(
+      `[migrate] 중단: 환경변수가 없습니다: ${missingEnv.join(', ')}. ` +
+        `.env.local 을 확인하세요. 아무것도 하지 않았습니다.`
+    );
+    process.exit(1);
+  }
+
   const { insertDeployment } = await import('@/lib/queries/deployments');
   const { fetchIssue } = await import('@/lib/pms/redmine');
 
