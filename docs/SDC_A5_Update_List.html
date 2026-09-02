@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[SDC A5] NX-TSH2225 #1 SW Update 적용 내역</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1c2530; --muted:#5b6b7d; --line:#e1e7ee;
+    --brand:#0a4d8c; --brand2:#1769aa; --ok:#1d8f4e; --okbg:#e7f6ee;
+    --warn:#b5811a; --warnbg:#fdf4e0; --bad:#c0392b; --badbg:#fbeae8;
+    --mono:#0b2440; --code:#f5f7fa; --chip:#eef3f8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.65;font-size:15px;}
+  .layout{display:flex;margin:0;align-items:flex-start;gap:0}
+
+  nav.toc{width:310px;flex:none;position:sticky;top:0;max-height:100vh;overflow-y:auto;
+    padding:24px 4px 40px 6px;font-size:13px}
+  nav.toc .toc-title{font-weight:700;color:var(--brand);font-size:13.5px;letter-spacing:.4px;
+    margin:0 0 10px 4px}
+  nav.toc a{display:block;color:#36475a;text-decoration:none;border-radius:7px;
+    padding:4px 6px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  nav.toc a:hover{background:var(--chip);color:var(--brand)}
+  nav.toc a.sec{font-weight:700;color:var(--mono);margin-top:7px}
+  nav.toc a.sec:hover{color:var(--brand)}
+  nav.toc a.sub{padding-left:14px;font-size:12.5px;color:var(--muted)}
+  nav.toc a.sub:hover{color:var(--brand)}
+  nav.toc .chip{font-size:9.5px;padding:0 6px;margin:0 5px 0 0;vertical-align:1px}
+  nav.toc .chip.a5{background:var(--badbg);color:var(--bad);border:1px solid #f1c9c3}
+
+  .wrap{flex:1;min-width:0;max-width:1080px;padding:32px 22px 80px;}
+  header.doc{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
+    border-radius:14px;padding:30px 32px;box-shadow:0 6px 22px rgba(10,77,140,.18);}
+  header.doc .tag{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    padding:3px 12px;border-radius:999px;font-size:12.5px;letter-spacing:.4px;margin-bottom:12px;}
+  header.doc h1{margin:0 0 6px;font-size:25px;line-height:1.3;font-weight:700;}
+  header.doc .sub{opacity:.92;font-size:14px;margin-top:8px}
+  .meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:20px}
+  .meta-grid .m{background:rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;font-size:13px}
+  .meta-grid .m b{display:block;opacity:.8;font-weight:500;font-size:11.5px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:22px 26px;margin:18px 0;box-shadow:0 2px 10px rgba(20,40,70,.04);scroll-margin-top:14px}
+  h2.s{font-size:18px;margin:4px 0 14px;color:var(--brand);display:flex;align-items:center;gap:9px;
+    border-bottom:2px solid var(--chip);padding-bottom:9px}
+  h2.s .n{background:var(--brand);color:#fff;width:25px;height:25px;border-radius:7px;display:inline-flex;
+    align-items:center;justify-content:center;font-size:13.5px;flex:none}
+  h3.s{font-size:15.5px;margin:20px 0 8px;color:var(--mono);display:flex;align-items:center;
+    gap:8px;flex-wrap:wrap;scroll-margin-top:14px}
+  h3.s:first-of-type{margin-top:4px}
+  p{margin:8px 0}
+  .muted{color:var(--muted)}
+  ul{margin:4px 0 10px;padding-left:20px}
+  li{margin:5px 0}
+
+  .pms{font-family:Consolas,"D2Coding",Menlo,monospace;font-size:14px;font-weight:700;
+    color:var(--brand2);text-decoration:none;border-bottom:1px dashed var(--brand2);white-space:nowrap}
+  .pms:hover{color:var(--brand);border-bottom-style:solid}
+
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;
+    letter-spacing:.3px;white-space:nowrap}
+  .chip.a5{background:var(--badbg);color:var(--bad);border:1px solid #f1c9c3}
+  .chip.prev{background:var(--warnbg);color:var(--warn);border:1px solid #ecd9a8}
+
+  .item{border:1px solid #d8e3ef;border-radius:10px;background:#eef3f9;
+    padding:14px 18px 15px;margin:14px 0}
+  .item .phen{background:#fff;border-color:#dbe4ee}
+  .item h3.s{margin:0 0 8px}
+  .item>ul:last-child,.item>table:last-child,.item>p:last-child,
+  .item>.callout:last-child{margin-bottom:0}
+  .phen{background:var(--code);border:1px solid var(--line);border-left:3px solid var(--brand2);
+    border-radius:6px;padding:10px 13px;margin:8px 0;font-size:14px;color:#26384c}
+  .phen b{color:var(--brand);font-size:12.5px;letter-spacing:.3px}
+  .imp{font-size:12.5px;letter-spacing:.3px;color:var(--brand);font-weight:700;margin:10px 0 4px}
+  .grp{display:inline-block;font-family:Consolas,"D2Coding",Menlo,monospace;font-size:12px;font-weight:700;
+    padding:1px 10px;border-radius:6px;margin:6px 0 0}
+  .grp.xea{background:#e9f1fb;border:1px solid #c9ddf3;color:#12507f}
+  .grp.xes{background:#f0ecfb;border:1px solid #d6cdf1;color:#4a3585}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--chip);color:var(--mono);font-weight:600}
+  td.c,th.c{text-align:center}
+
+  code,.mono{font-family:"Consolas","D2Coding",Menlo,monospace}
+  .pill{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;
+    padding:1px 7px;font-family:Consolas,monospace;font-size:12px;color:var(--mono)}
+
+  .callout{border-radius:10px;padding:14px 18px;margin:14px 0;font-size:14px}
+  .callout.key{background:var(--badbg);border:1px solid #f1c9c3}
+  .callout.key b{color:var(--bad)}
+  .callout.note{background:var(--warnbg);border:1px solid #ecd9a8}
+  .callout.note b{color:var(--warn)}
+  .callout.good{background:var(--okbg);border:1px solid #b9e3c9}
+  .callout.good b{color:var(--ok)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;margin-top:6px}
+  .legend div{display:flex;align-items:center;gap:7px}
+
+  footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  @media(max-width:1000px){nav.toc{display:none}}
+  @media print{body{background:#fff}section{box-shadow:none}.item{break-inside:avoid}header.doc{box-shadow:none}nav.toc{display:none}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc">
+  <div class="toc-title">목차</div>
+  <a class="sec" href="#s0">0. 표기 안내</a>
+  <a class="sec" href="#s1">1. CIM</a>
+  <a class="sub" href="#p4552">#4552 CIM 불안정</a>
+  <a class="sub" href="#p4900">#4900 Shutter Door 상태 전달</a>
+  <a class="sec" href="#s2">2. Feature Align</a>
+  <a class="sub" href="#p4596">#4596 Feature Align 동작 확인</a>
+  <a class="sub" href="#p3887">#3887 Fine Align Fail</a>
+  <a class="sec" href="#s3">3. Tip Check</a>
+  <a class="sub" href="#p3441"><span class="chip a5">A5</span>#3441 Tip Check Debug Data</a>
+  <a class="sub" href="#p4380"><span class="chip a5">A5</span>#4380 중알람 시 Done 처리</a>
+  <a class="sub" href="#p4705">#4705·4711 Manual Tip Check 무반응</a>
+  <a class="sub" href="#p4770">#4770 Manual Tip Check 개선</a>
+  <a class="sub" href="#p4045">#4045 Detector Cal. 시퀀스</a>
+  <a class="sec" href="#s4">4. PMAC</a>
+  <a class="sub" href="#p4952"><span class="chip a5">A5</span>#4952 측정 후 이동 시 Fatal Following Error</a>
+  <a class="sub" href="#p4727"><span class="chip a5">A5</span>#4727·4827 Timeout·AmpFault</a>
+  <a class="sub" href="#p4663">#4663 Servo On/Off 무한 반복</a>
+  <a class="sub" href="#p4228">#4228 Air Bearing 미차단</a>
+  <a class="sub" href="#p4881">#4881 Timeout 이후 무반응</a>
+  <a class="sub" href="#p4846">#4846 Clamp Open/Close Time</a>
+  <a class="sub" href="#p3807">#3807 SOL Alarm 분기</a>
+  <a class="sub" href="#p4141">#4141 Lift Pin 동작 개선</a>
+  <a class="sec" href="#s5">5. PLC</a>
+  <a class="sub" href="#p4071">#4071 Shutter Open 전 Ionizer Off</a>
+  <a class="sub" href="#p4842">#4842 Ionizer UI·FDC</a>
+  <a class="sub" href="#p4206">#4206 EMO Alarm Text</a>
+  <a class="sec" href="#s6">6. 측정 / 분석</a>
+  <a class="sub" href="#p4692">#4692 Multi Line Capture Upload</a>
+  <a class="sub" href="#p3421">#3421·4488 좌표계</a>
+  <a class="sub" href="#p4131">#4131 Vertex Point 분석</a>
+  <a class="sub" href="#p4633">#4633 Y Scan Post Positioning</a>
+  <a class="sub" href="#p2135">#2135 Z Linearity</a>
+  <a class="sec" href="#s7">7. UI / 편의</a>
+  <a class="sub" href="#p3046"><span class="chip a5">A5</span>#3046 System ID</a>
+  <a class="sub" href="#p4687">#4687 Offline Load/Unload 버튼</a>
+  <a class="sub" href="#p4202">#4202 AE Door Lock Button</a>
+  <a class="sub" href="#p4207">#4207 Bypass UI 삭제</a>
+  <a class="sub" href="#p4172">#4172 설비 인증 이미지</a>
+  <a class="sec" href="#s8">8. 안정화 / 성능</a>
+  <a class="sub" href="#p4866"><span class="chip a5">A5</span>#4866 Camera Network 부하</a>
+  <a class="sub" href="#pjobresult"><span class="chip a5">A5</span>Job Result DB Loading 지연</a>
+  <a class="sub" href="#p4666"><span class="chip a5">A5</span>#4666 System Crash</a>
+  <a class="sub" href="#p4390">#4390 XEA 종료 시 C++ Error</a>
+  <a class="sec" href="#s9">9. 신규 Alarm</a>
+</nav>
+
+<div class="wrap">
+
+  <header class="doc">
+    <span class="tag">SW Update 적용 내역 · SDC A5 / NX-TSH2225 #1</span>
+    <h1>SDC A5 SW Update 적용 내역</h1>
+    <div class="sub">6월 29일 전달분(XEA Dev3975 / XEService Dev1741)이 미적용 상태이므로,<br>
+    해당 내용을 포함한 누적 적용 내역입니다.</div>
+    <div class="meta-grid">
+      <div class="m"><b>설비</b>SDC A5 / NX-TSH2225 #1</div>
+      <div class="m"><b>XEA</b>Dev3592 → Dev4317</div>
+      <div class="m"><b>XEService</b>Dev1609 → Dev2015</div>
+      <div class="m"><b>작성</b>Digital R&amp;D 이호연</div>
+    </div>
+  </header>
+
+  <section id="s0">
+    <h2 class="s"><span class="n">0</span>표기 안내</h2>
+    <div class="legend">
+      <div><span class="chip a5">A5</span> SDC A5 요청 또는 발생 건</div>
+      <div><span class="chip prev">6/29</span> 6월 29일 전달분 (미적용)</div>
+    </div>
+    <p class="muted" style="margin-top:12px">개선 내용은 <span class="grp xea">XEA</span> <span class="grp xes">XES</span> 로 구분하여 기재하였습니다.<br>
+    PMS 번호를 클릭하면 해당 PMS 페이지로 이동합니다.</p>
+  </section>
+
+  <!-- 1. CIM -->
+  <section id="s1">
+    <h2 class="s"><span class="n">1</span>CIM</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4552"><a class="pms" href="https://pms.parksystems.com/issues/4552">PMS #4552</a> CIM 불안정</h3>
+    <div class="phen"><b>현상</b><br>
+      설비 가동 중 CIM 무응답으로 Glass 반송이 진행되지 않고, CIM 재시작으로만 복구되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Glass 반송 중 GlassExchangeState 조회 주기 변경 (0.5초 → 5초)</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>TCP Keepalive 파라미터 조정으로 연결 끊김을 5초 이내 감지</li>
+      <li>응답 대기 구간에서도 끊김을 감지하도록 LinkWatchdog 추가</li>
+      <li>재연결 시 Control State가 Remote에서 Offline으로 변경되던 문제 수정<br>
+        Control State 주체를 XEA로 통일</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4900"><a class="pms" href="https://pms.parksystems.com/issues/4900">PMS #4900</a> Shutter Door 상태 전달</h3>
+    <div class="phen"><b>현상</b><br>
+      Shutter Door가 동작 중인 상태에서도 Door Open으로 전달되어,<br>
+      개방이 완료되기 전에 반송이 진행될 수 있던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Door 상태를 Open / Closed / 동작 중으로 구분하여 Contact Point 전달</li>
+      <li>동작 중이거나 판별되지 않는 상태에서는 Open, Closed 모두 전달하지 않도록 변경</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 2. Feature Align -->
+  <section id="s2">
+    <h2 class="s"><span class="n">2</span>Feature Align</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4596"><a class="pms" href="https://pms.parksystems.com/issues/4596">PMS #4596</a> Feature Align 동작 확인 요청</h3>
+    <div class="phen"><b>현상</b><br>
+      Servo Off 시 X 방향으로 큰 Offset이 발생한 상태에서의 Feature Align 동작 문의</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Z Positioning / Image Scan 시 Scan Line 표시 이미지 저장 (Positioning, Overlay)</li>
+      <li>Fine Align Fail 시 Step Panel 표시 이미지를 Coarse 결과에서 Fine 결과로 변경</li>
+      <li>Fine Align 시 Scan Bound 호출 추가</li>
+      <li>Scan Line 표시에 Detector OffsetAdc 반영</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Vision OCX에 Scan Line 표시 인터페이스 추가</li>
+      <li>Fine Align Pattern Match 결과 표시 시 Best / Nearest / Tracking Pattern 미선택이면 Cross Mark 미표시</li>
+      <li>Scan Line 보정을 위한 Detector OffsetAdc Property 추가</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p3887"><a class="pms" href="https://pms.parksystems.com/issues/3887">PMS #3887</a> Fine Align Fail <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Option을 Skip으로 설정해도 Approach 및 Scan이 진행되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Coarse Align Fail과 동일하게 Recipe의 Feature Align Fail Option에 따라 처리</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 3. Tip Check -->
+  <section id="s3">
+    <h2 class="s"><span class="n">3</span>Tip Check</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4705"><a class="pms" href="https://pms.parksystems.com/issues/4705">PMS #4705</a>
+      <a class="pms" href="https://pms.parksystems.com/issues/4711">#4711</a> Manual Tip Check 무반응</h3>
+    <div class="phen"><b>현상</b><br>
+      Tip Check Manual Run이 실행되지 않고 결과 폴더가 비어 있는 상태로 생성됨<br>
+      A6에서는 Tip Characterizer 실행 시 로딩 팝업만 표시 후 사라짐</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Tip Characterize Job 내 Recipe / Method Null Check 보완</li>
+      <li>Tip Positioning 시 XY Detector Calibration 후 Tip Align 진행하도록 순서 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4770"><a class="pms" href="https://pms.parksystems.com/issues/4770">PMS #4770</a> Manual Tip Check 기능 개선</h3>
+    <div class="phen"><b>현상</b><br>
+      동일 Tip으로 반복 Run 시 Job ID를 매번 변경해야 하고, 결과 폴더에 X / Y 구분이 없던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Manual Tip Check 결과 / 디버그 데이터 저장 경로 통합<br>
+        Setup → Data Save → Manual Measurement 에 설정된 경로를 Root Path로 사용
+        <ul>
+          <li>Tip Characterization (X Scan) : <code>{Manual Measurement}\TipCharacterizer\{TipId}\{JobId}\X</code></li>
+          <li>Tip Characterization (Y Scan) : <code>{Manual Measurement}\TipCharacterizer\{TipId}\{JobId}\Y</code></li>
+          <li>Tip Positioning : <code>{Manual Measurement}\TipPositioning\{TipId}\{Date}\{Time}</code></li>
+          <li>Tip Qualification : <code>{Manual Measurement}\TipQualification\{TipId}\{JobId}</code></li>
+          <li>Tip Exchanger : <code>{Manual Measurement}\TipExchanger\{JobId}</code></li>
+        </ul>
+      </li>
+      <li>Job ID 중복 시 (index)를 붙여 폴더 자동 생성</li>
+      <li>Tip Qualification Run 시 Method 미선택이면 경고 표시 후 미실행</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4045"><a class="pms" href="https://pms.parksystems.com/issues/4045">PMS #4045</a> Detector Cal. 시퀀스 변경 <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Detector Cal. 사용 이후 오계측 발생<br>
+      Scanner가 Shift된 상태에서 Tip Align이 먼저 진행되면 Offset이 잘못 적용됨</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>ImageProcessJob / Tip Char. Job에서 Detector Cal. → Tip Align → Positioning 순서로 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p3441"><a class="pms" href="https://pms.parksystems.com/issues/3441">PMS #3441</a> Tip Check Debug Data 개선
+      <span class="chip a5">A5</span> <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Job 중 Tip 교체 후 진행한 Tip Positioning Data가 다음 Tip Check 시퀀스 진행 시 삭제되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Tip Char. / Tip Positioning / Tip Qualification의 Ref. Scan 및 Sample Positioning Data Backup 개선</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4380"><a class="pms" href="https://pms.parksystems.com/issues/4380">PMS #4380</a> Job 중 중알람 발생 시 Done 처리
+      <span class="chip a5">A5</span> <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Tip Exchange Sequence 중 <code>[DSP] : Focus Stage reached Upper limit error</code> 발생 시<br>
+      Job이 Pausing되지 않고 Done 처리 후 측정을 계속 진행</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Probe Hand Check Logic 내에서 HW Alarm 발생 시 Job Stop</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 4. PMAC -->
+  <section id="s4">
+    <h2 class="s"><span class="n">4</span>PMAC</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4952"><a class="pms" href="https://pms.parksystems.com/issues/4952">PMS #4952</a> 측정 후 다음 포인트 이동 시 Fatal Following Error
+      <span class="chip a5">A5</span></h3>
+    <div class="phen"><b>현상</b><br>
+      측정 완료 후 다음 측정 포인트로 이동하는 구간에서 XY Stage Fatal Following Error가 간헐적으로 발생<br>
+      일부 포인트 전환(예: 5→6, 15→16, 18→19)에서 확인</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Servo On 완료 이후 Settling Time을 적용하도록 변경 (PMAC PLC 대기 방식)</li>
+      <li>Command 실패 시 실패 결과를 응답에 반영</li>
+      <li>Dual 구성에서 Settling Time 전달을 Master 경로로 단일화<br>
+        Slave 경로 진행 코드 추가</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4727"><a class="pms" href="https://pms.parksystems.com/issues/4727">PMS #4727</a>
+      <a class="pms" href="https://pms.parksystems.com/issues/4827">#4827</a> XY Stage Timeout 및 Amplifier Fault
+      <span class="chip a5">A5</span></h3>
+    <div class="phen"><b>현상</b><br>
+      XY Stage Execution Timeout 발생 시 Motor #4 AmpFault 확인<br>
+      On axis ↔ Off axis 전환 시 Servo / Air가 꺼지고 XEA, XES 강제 종료로만 복구</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>PMAC Log에 AmpFault / I2tFault 기록 추가</li>
+      <li>Emergency.plc가 현재 사용 중인 X축만 대상으로 Servo 및 Air를 Off 하도록 변경</li>
+      <li>Emergency.plc Error 그룹 정리 및 Servo / Homing 로그 보강</li>
+      <li>StopKernel 호출 시 valid 가드 추가</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4881"><a class="pms" href="https://pms.parksystems.com/issues/4881">PMS #4881</a> XY Stage Timeout 이후 무반응</h3>
+    <div class="phen"><b>현상</b><br>
+      Execution Timeout(20101) 발생 이후 실행한 Clamp 동작이 알람 없이 무반응 상태로 유지<br>
+      약 14분 지속, XEA 재시작으로 복구</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Job Polling에 STOPPING 종료 처리 추가</li>
+      <li>PMAC 내부 Job 거부 시 즉시 실패 종료 및 신규 Alarm 20158 (Job Precondition Not Satisfied) 추가</li>
+      <li>이전 Command 미완료 상태에서 신규 Command 수신 시 Another Command Processing 알람(20105) 발생</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4846"><a class="pms" href="https://pms.parksystems.com/issues/4846">PMS #4846</a> Clamp Open / Close Time 증가</h3>
+    <div class="phen"><b>현상</b><br>
+      FDC상 Clamp Open / Close 시간이 15초 이내에서 30초 이상으로 증가</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Motor 모니터링 로그 조회를 Multi Command 일괄 조회로 병합 (Polling 사이클당 9회 → 최대 4회)</li>
+      <li>PMAC 응답 수신 성공 시 불필요한 대기(200ms) 제거</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4663"><a class="pms" href="https://pms.parksystems.com/issues/4663">PMS #4663</a> Servo On / Off 무한 반복</h3>
+    <div class="phen"><b>현상</b><br>
+      Air 미공급 상태에서 Servo On 시도로 Enable PLC 8이 발생하고,<br>
+      1~2분 간격으로 Servo On / Off가 반복되어 모터 과열 및 석정반 열변형 발생</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Enable PLC 8 사용 제거 후 PLC 30으로 대체</li>
+      <li>Emergency.plc 자동 다운로드 처리 추가</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4228"><a class="pms" href="https://pms.parksystems.com/issues/4228">PMS #4228</a> PM Mode 진입 시 Air Bearing 미차단
+      <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      PM Mode 진입 시 XY Gantry Servo는 Off되나 Air Bearing이 차단되지 않던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Emergency.plc의 Servo Off를 Manual Off 방식으로 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p3807"><a class="pms" href="https://pms.parksystems.com/issues/3807">PMS #3807</a> Motor 축 SOL 이상 동작 시 Alarm 분기</h3>
+    <div class="phen"><b>현상</b><br>
+      Sol 이상 시 어느 축이 원인인지 구분할 수 없어 원인 파악에 장시간 소요</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Execution Timeout 발생 시 Sol Control 상태와 Pressure Sensor 상태를 비교하여,<br>
+        불일치 축 / Clamp 정보와 함께 Air Pressure Alarm(20144) 발생</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4141"><a class="pms" href="https://pms.parksystems.com/issues/4141">PMS #4141</a> Lift Pin 동작 개선</h3>
+    <div class="phen"><b>현상</b><br>
+      Power Cycle 이후 System Initialize 진행 중 Lift Pin 이 Homing 을 완료하지 않은 상태로 상승하여<br>
+      Gantry Stage 와 충돌</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>System Initialize 시 Lift Pin 원점 복귀 전 Loading Position 으로 이동</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Lift Pin Homing 전 Sensor 확인 추가</li>
+      <li>Timeout 발생 시 다음 동작을 진행하지 않도록 변경</li>
+      <li>Lift Pin Initialize 시 DB 사용 설정 확인 추가</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 5. PLC -->
+  <section id="s5">
+    <h2 class="s"><span class="n">5</span>PLC</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4842"><a class="pms" href="https://pms.parksystems.com/issues/4842">PMS #4842</a> Ionizer UI 및 FDC Upload</h3>
+    <div class="phen"><b>현상</b><br>
+      실제 미연결 Head가 UI에 표시되고, FDC에 일부 Head Status가 Upload되지 않던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Ionizer VID 매핑을 고정 4채널에서 XES NumberOfHeads 응답값 기준으로 변경</li>
+      <li>Shutter Door Open 시 PLC가 Ionizer Controller 전원을 Off 하는 구간의 통신 이상 알람(140005) 미발생 처리</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>NumberOfHeads를 4 미만으로 설정 시 수신 데이터가 헤드 간 한 칸씩 밀리던 문제 수정<br>
+        설정 범위 1~4 제한</li>
+      <li>수신 패킷 검증 강화 및 헤드 상태 3회 연속 동일 판정 시 반영<br>
+        <a class="pms" href="https://pms.parksystems.com/issues/4626">PMS #4626</a> 통신 데이터 손상 시 허위 알람 재발 방지</li>
+      <li>헤드 미연결 알람을 매 폴링 반복 발생에서 상태 변화 시 1회 발생으로 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4071"><a class="pms" href="https://pms.parksystems.com/issues/4071">PMS #4071</a> Shutter Open 전 Ionizer Off</h3>
+    <div class="phen"><b>현상</b><br>
+      Shutter Open 상태에서 Ionizer가 On 상태로 유지되던 현상 (방사선 Qual 지적 사항)</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Front Door Control에서 Shutter Open 전 Ionizer Off 추가</li>
+    </ul>
+    <div class="callout note"><b>A5 동작 유지</b><br>
+      A5는 과거 정전기 대응으로 Load 시 Ionizer On을 유지하는 예외 설비입니다.<br>
+      SDC 옵션으로 분기하여 기존 동작을 그대로 유지하였습니다.</div>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4206"><a class="pms" href="https://pms.parksystems.com/issues/4206">PMS #4206</a> EMO Alarm Text <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      EMO Alarm 발생 시 어느 위치의 EMO인지 UI에서 확인 불가 (환경안전 최종검수 지적)</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Emergency Alarm 발생 시 Alarm Text에 위치 정보 추가</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 6. 측정 / 분석 -->
+  <section id="s6">
+    <h2 class="s"><span class="n">6</span>측정 / 분석</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4692"><a class="pms" href="https://pms.parksystems.com/issues/4692">PMS #4692</a> Multi Line 분석 Capture Upload</h3>
+    <div class="phen"><b>현상</b><br>
+      Multi Line 분석 시 한 Point에서 마지막 Line의 Capture 이미지만 Server로 Upload되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>설정한 Line 개수만큼 Capture Upload, Measurement Item Name의 Line Name 중복 제거</li>
+      <li>1 Line Scan 시 Capture 예외로 분석마다 지연이 발생하던 문제 수정</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p3421"><a class="pms" href="https://pms.parksystems.com/issues/3421">PMS #3421</a>
+      <a class="pms" href="https://pms.parksystems.com/issues/4488">#4488</a> 좌표계 <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Edge Cut 위치 고정 요청<br>
+      Recipe에 기입한 Measure Point 좌표와 Vision 좌표의 X, Y 부호가 반대로 표시되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Flat Panel의 Edge Cut &amp; Direction 설정 방식 개선</li>
+      <li>Jobs View에 표시되는 Indicator 위치 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4131"><a class="pms" href="https://pms.parksystems.com/issues/4131">PMS #4131</a> Vertex Point 분석 이상 <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Vertex Point를 2개로 설정해도 3개로 분석되던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Vertex Point 분석 개선</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4633"><a class="pms" href="https://pms.parksystems.com/issues/4633">PMS #4633</a> Y Scan Post Positioning <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Y Scan Data에 Post Positioning 사용 시 Post Positioning UI에 프로파일이 표시되지 않던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Post Positioning UI 업데이트 개선</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p2135"><a class="pms" href="https://pms.parksystems.com/issues/2135">PMS #2135</a> Z Linearity <span class="chip prev">6/29</span></h3>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Z Linearity 기능</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Z Linearity 기능</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 7. UI / 편의 -->
+  <section id="s7">
+    <h2 class="s"><span class="n">7</span>UI / 편의</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4687"><a class="pms" href="https://pms.parksystems.com/issues/4687">PMS #4687</a> Offline State Loading / Unloading 버튼</h3>
+    <div class="phen"><b>현상</b><br>
+      Offline State에서는 사용하지 않는 Glass Loading / Unloading 버튼이 활성화되어 있던 현상</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Standalone EFEM 설비에서도 Setup View의 Manual Load / Unload Button 표시 옵션을 사용할 수 있도록 조건 개선</li>
+    </ul>
+
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4202"><a class="pms" href="https://pms.parksystems.com/issues/4202">PMS #4202</a> AE Door Lock Button <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      내부 Key 체결 상태에서 잠금 시도가 가능했던 현상 (환경안전 최종검수 지적)</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>PM Mode View의 AE Door Lock Button 활성화 조건 변경</li>
+      <li>PM Mode View의 Bypass Inside &amp; Outside Teach 문구 변경</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4207"><a class="pms" href="https://pms.parksystems.com/issues/4207">PMS #4207</a> Bypass UI 삭제 <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Bypass 인터락이 없어야 한다는 환경안전 최종검수 지적</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Facility Controller / Extend #2 UI 내 Bypass UI 삭제<br>
+        Emergency / Reset Alarm, AE Door, Lift Pin Control, AE Door Lock</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4172"><a class="pms" href="https://pms.parksystems.com/issues/4172">PMS #4172</a> 설비 인증 이미지 <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      설비 인증 명판 이미지 표시 요청</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>Park 마크 클릭 시 표시되는 정보에 인증 명판 이미지 추가</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p3046"><a class="pms" href="https://pms.parksystems.com/issues/3046">PMS #3046</a> System ID
+      <span class="chip a5">A5</span> <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      사용하지 않는 System ID 항목(Tip Initializer) 삭제 요청</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>System ID List 표시 조건 변경</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 8. 안정화 / 성능 -->
+  <section id="s8">
+    <h2 class="s"><span class="n">8</span>안정화 / 성능</h2>
+
+    <div class="item">
+    <h3 class="s" id="p4866"><a class="pms" href="https://pms.parksystems.com/issues/4866">PMS #4866</a> Dual Head Camera Network 부하
+      <span class="chip a5">A5</span></h3>
+    <div class="phen"><b>현상</b><br>
+      Dual Head 설비에서 사용하지 않는 Camera의 Live를 Off하여 LAN 사용량을 낮춰 달라는 요청</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>활성 Unit 기준으로 비선택 Head의 Camera Live 전송 정지, 선택 Head 재개</li>
+      <li>Camera FPS 감시 CSV 로그 제거 (XEService OCX 로그로 이관)</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>Camera FPS 저하 구간을 OCX 로그에 기록</li>
+      <li>Live Off 상태에서 FPS 표시가 이전 값으로 남던 문제 수정</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="pjobresult">Job Result DB Loading 지연 <span class="chip a5">A5</span></h3>
+    <p class="muted">PMS 미등록 / 사내 개선</p>
+    <div class="phen"><b>현상</b><br>
+      A5에서 XEA Loading 시 Loading Result 단계가 수 분 이상 소요되어 <code>JobResult.History.db</code>를 별도 백업 중</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>결과 목록 조회 쿼리 개선</li>
+      <li>자동 정리 시 VACUUM을 미사용 페이지 25% 이상일 때만 실행</li>
+      <li>Export 오류 수정<br>
+        Recipe 필터 미반영, Page Range 구간 오계산, 측정 이미지 1/3 누락, 재Export 시 중복 기록</li>
+      <li>Export 진행률 / 취소 표시 및 비동기 처리</li>
+    </ul>
+    <table>
+      <tr><th>구간</th><th class="c">개선 전</th><th class="c">개선 후</th></tr>
+      <tr><td>Result View Loading</td><td class="c">수 분 이상</td><td class="c">0.63 초</td></tr>
+      <tr><td>결과 목록 Paging (30건)</td><td class="c">25 ~ 67 초</td><td class="c">0.003 초</td></tr>
+      <tr><td>자동 정리 (autoDelete)</td><td class="c">96.9 초</td><td class="c">0.1 초 미만</td></tr>
+    </table>
+    <p class="muted">2GB 크기의 <code>JobResult.History.db</code> 기준 사내 측정값입니다.</p>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4666"><a class="pms" href="https://pms.parksystems.com/issues/4666">PMS #4666</a> System Crash
+      <span class="chip a5">A5</span> <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      XEA 가동 중 Tip Char. 진행 간 Pattern Matching 이후 System Crash 발생</div>
+    <div class="imp">개선</div>
+    <div class="grp xea">XEA</div>
+    <ul>
+      <li>DSP Alarm 이 Alarm List 에 등록되지 않던 문제 수정</li>
+      <li>System Crash Alarm 발생 시 DSP Abort 처리 추가<br>
+        Z/F Stage 이동 중 / Approach 중 / Scan 중인 경우 Stop 처리</li>
+    </ul>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>DSP Board Data 수신 시 비정상 크기 Packet Drop 처리</li>
+    </ul>
+
+    </div>
+    <div class="item">
+    <h3 class="s" id="p4390"><a class="pms" href="https://pms.parksystems.com/issues/4390">PMS #4390</a> XEA 종료 시 C++ Error <span class="chip prev">6/29</span></h3>
+    <div class="phen"><b>현상</b><br>
+      XEA 종료 시 간헐적으로 C++ Error 발생</div>
+    <div class="imp">개선</div>
+    <div class="grp xes">XES</div>
+    <ul>
+      <li>종료 시 AVT Camera link-remove Callback Handling 개선</li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- 신규 Alarm -->
+  <section id="s9">
+    <h2 class="s"><span class="n">9</span>신규 Alarm</h2>
+    <table>
+      <tr><th class="c" style="width:110px">Alarm ID</th><th>Text</th><th class="c" style="width:130px">출처</th></tr>
+      <tr>
+        <td class="c"><span class="pill">20105</span></td>
+        <td><code>[XYStage] : Another Command is processing</code></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/4881">#4881</a></td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill">20144</span></td>
+        <td><code>[XYStage] : Air Pressure is abnormal.</code><br>불일치 축 / Clamp 정보 포함</td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/3807">#3807</a></td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill">20158</span></td>
+        <td><code>[XYStage] : Job Precondition Not Satisfied</code></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/4881">#4881</a></td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</div>
+</body>
+</html>

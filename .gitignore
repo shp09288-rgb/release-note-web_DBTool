@@ -43,3 +43,6 @@ next-env.d.ts
 
 # runtime lock files
 data/_locks/
+
+# superpowers SDD scratch
+/.superpowers/
