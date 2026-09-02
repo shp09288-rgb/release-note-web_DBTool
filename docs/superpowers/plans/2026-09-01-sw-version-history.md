@@ -2592,14 +2592,14 @@ export function ItemDetail({ item }: { item: DeploymentItemRow }) {
   return (
     <div className="border-t border-park-border py-4">
       <div className="flex flex-wrap items-center gap-2">
-        {item.pmsNo ? (
+        {item.pms_no ? (
           <a
-            href={`${PMS_BASE}/issues/${item.pmsNo}`}
+            href={`${PMS_BASE}/issues/${item.pms_no}`}
             target="_blank"
             rel="noreferrer"
             className="rounded bg-slate-100 px-2 py-0.5 text-xs font-bold text-park-navy hover:bg-slate-200"
           >
-            PMS #{item.pmsNo}
+            PMS #{item.pms_no}
           </a>
         ) : null}
         {item.flags.includes('not_applied') ? (
@@ -3658,7 +3658,7 @@ const issues = await getCachedIssues(pmsNumbers);
 />
 ```
 
-`components/history/deployment-timeline.tsx`의 props에 `issues: Record<number, PmsIssueRow>`를 추가하고 `<ItemDetail item={item} issue={issues[item.pmsNo ?? -1]} />` 로 넘긴다.
+`components/history/deployment-timeline.tsx`의 props에 `issues: Record<number, PmsIssueRow>`를 추가하고 `<ItemDetail item={item} issue={issues[item.pms_no ?? -1]} />` 로 넘긴다.
 
 `components/history/item-detail.tsx`의 시그니처를 바꾼다:
 
