@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { DeploymentWithItems } from '@/lib/queries/types';
 import type { TimelineGap } from '@/lib/timeline';
+import type { PmsIssueRow } from '@/lib/queries/pms';
 import { ItemDetail } from './item-detail';
 
 function VersionArrow({ from, to }: { from: string; to: string }) {
@@ -28,11 +29,14 @@ function GapNotice({ gap }: { gap: TimelineGap }) {
 export function DeploymentTimeline({
   deployments,
   gaps,
+  issues,
 }: {
   deployments: DeploymentWithItems[];
   gaps: TimelineGap[];
+  issues: Record<number, PmsIssueRow>;
 }) {
   const [open, setOpen] = useState<string | null>(deployments[0]?.id ?? null);
+  const siteName = deployments[0]?.site ?? '';
 
   return (
     <ol className="space-y-3">
@@ -87,7 +91,12 @@ export function DeploymentTimeline({
                   ) : (
                     <>
                       {dep.items.map((item) => (
-                        <ItemDetail key={item.id} item={item} />
+                        <ItemDetail
+                          key={item.id}
+                          item={item}
+                          issue={item.pms_no != null ? issues[item.pms_no] : undefined}
+                          siteName={siteName}
+                        />
                       ))}
                       <Link
                         href={`/deployment/${dep.id}`}

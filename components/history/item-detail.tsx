@@ -1,8 +1,17 @@
 import type { DeploymentItemRow } from '@/lib/queries/types';
+import type { PmsIssueRow } from '@/lib/queries/pms';
 
 const PMS_BASE = 'https://pms.parksystems.com';
 
-export function ItemDetail({ item }: { item: DeploymentItemRow }) {
+export function ItemDetail({
+  item,
+  issue,
+  siteName,
+}: {
+  item: DeploymentItemRow;
+  issue?: PmsIssueRow;
+  siteName: string;
+}) {
   return (
     <div className="border-t border-park-border py-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -23,6 +32,16 @@ export function ItemDetail({ item }: { item: DeploymentItemRow }) {
         ) : null}
         <span className="text-xs text-slate-400">{item.section}</span>
       </div>
+
+      {issue ? (
+        <p className="mt-1 text-xs text-slate-500">
+          {issue.status}
+          {issue.assignee ? ` · ${issue.assignee}` : ''}
+          {issue.origin_site && issue.origin_site !== siteName
+            ? ` · 최초 발생 ${issue.origin_site}`
+            : ''}
+        </p>
+      ) : null}
 
       <h4 className="mt-2 font-semibold text-slate-800">{item.title}</h4>
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTimeline } from '@/lib/queries/deployments';
+import { getCachedIssues } from '@/lib/queries/pms';
 import { findGaps } from '@/lib/timeline';
 import { DeploymentTimeline } from '@/components/history/deployment-timeline';
 
@@ -21,6 +22,11 @@ export default async function SiteTimelinePage({
 
   const gaps = findGaps(deployments);
 
+  const pmsNumbers = deployments.flatMap((d) =>
+    d.items.map((i) => i.pms_no).filter((n): n is number => n != null)
+  );
+  const issues = await getCachedIssues(pmsNumbers);
+
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-10">
       <Link href="/" className="text-sm text-slate-500 hover:underline">
@@ -37,7 +43,11 @@ export default async function SiteTimelinePage({
         </p>
       </header>
 
-      <DeploymentTimeline deployments={deployments} gaps={gaps} />
+      <DeploymentTimeline
+        deployments={deployments}
+        gaps={gaps}
+        issues={Object.fromEntries(issues)}
+      />
     </main>
   );
 }
