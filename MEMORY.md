@@ -8,26 +8,33 @@ updated: 2026-09-01
 
 ## 현재 상태
 
-**설계·계획 완료, 구현 착수 전.** 코드는 아직 손대지 않았다 — 여전히 릴리즈
-노트 작성 도구다.
+**Phase A·B 코드 완료, Phase C 진행 중.** 브랜치 `feature/sw-version-history`,
+`origin/main` 위에 커밋 24개. 테스트 70개 통과, 빌드 통과.
 
-- 설계: `docs/superpowers/specs/2026-09-01-sw-version-history-design.md` (승인됨)
-- 계획: `docs/superpowers/plans/2026-09-01-sw-version-history.md` (18개 태스크)
+동작하는 것: 파서(항목 34건·알람 3건 추출), 버전 정규화, Redmine 클라이언트,
+쿼리 레이어, 끊김 계산, 그리고 화면 3개(설비 목록·타임라인·검색).
 
-## 다음 할 일
+| 태스크 | 상태 |
+|---|---|
+| 1–8, 10–13 | 완료 (리뷰 승인) |
+| 14 원문 보기 | 진행 중 |
+| **9 이관 90건** | **DB 프로비저닝 대기** |
+| 15–18 | DB 대기 |
 
-계획의 Task 1부터 순서대로. 단계는 계획 문서에 있고, 여기엔 큰 흐름만 적는다.
+## 막혀 있는 것 — 사람이 해야 함
 
-| Phase | 태스크 | 내용 |
-|---|---|---|
-| A 순수 로직 | 1–6 | vitest · 버전 정규화 · 파서 · PMS 추출 · Redmine 클라이언트 |
-| B 스키마·이관 | 7–9 | 새 테이블 · 쿼리 레이어 · 90건 이관 |
-| C 조회 화면 | 10–14 | 끊김 계산 · 설비 목록 · 타임라인 · 검색 · 원문 |
-| D 업로드 | 15–16 | 파싱/확정 API · 편집 가능한 미리보기 |
-| E PMS | 17 | 캐시 동기화 · 교차 사이트 표시 |
-| F 정리 | 18 | **맨 마지막에** 구 코드·구 테이블 제거 |
+1. `supabase/schema-v2.sql` 을 Supabase SQL Editor 에서 실행 (새 테이블 5개 추가만)
+2. `.env.local` 생성 — Supabase URL·anon·service_role, PMS_API_KEY, PMS_BASE_URL
+3. `git push -u origin feature/sw-version-history` — 이 환경에 GitHub 자격증명 없음
 
-Phase A는 DB 없이 전부 테스트된다. 여기를 먼저 끝내는 게 이 계획의 요점이다.
+셋 다 되면 Task 9·15·16·17 이 한 번에 풀린다.
+
+## 리베이스 이력
+
+로컬 리포는 GitHub 리포의 클론이 아니라 별도 `git init` 이었고 공통 조상이 없었다.
+로컬에 없던 4,326줄(release-note-bulk-parser, document-model, components/ui/* 등)이
+원격에 있었다. 2026-09-01 에 `git rebase --onto origin/main 46e8f46` 으로 정리했고
+충돌 0건. 백업 브랜치: `backup/sw-version-history-prerebase`.
 
 ## 확인된 사실
 
