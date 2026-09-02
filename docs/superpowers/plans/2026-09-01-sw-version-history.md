@@ -96,6 +96,7 @@ export default defineConfig({
     include: [
       'lib/version.test.ts',
       'lib/parsers/**/*.test.ts',
+      'lib/pms/**/*.test.ts',
       'lib/queries/**/*.test.ts',
       'scripts/**/*.test.ts',
     ],
