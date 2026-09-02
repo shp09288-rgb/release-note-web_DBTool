@@ -3360,9 +3360,8 @@ export function UploadWizard() {
 
       {parsed.duplicate ? (
         <div className="rounded-2xl border border-red-300 bg-red-50 p-5 text-sm text-red-800">
-          같은 사이트·버전의 배포가 이미 등록되어 있습니다
-          {parsed.duplicate.deployed_on ? ` (${parsed.duplicate.deployed_on})` : ''}. 저장하면
-          덮어씁니다.
+          {parsed.duplicate.message}
+          {parsed.duplicate.deployedOn ? ` (기존 배포일 ${parsed.duplicate.deployedOn})` : ''}
         </div>
       ) : null}
 
