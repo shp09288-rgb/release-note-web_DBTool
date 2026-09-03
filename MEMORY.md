@@ -2,39 +2,43 @@
 
 세션 시작에 이 파일부터 읽는다. 세션 끝에 `현재 상태`와 `다음 할 일`을 갱신한다.
 
-updated: 2026-09-01
+updated: 2026-09-03
 
 ---
 
 ## 현재 상태
 
-**Phase A·B 코드 완료, Phase C 진행 중.** 브랜치 `feature/sw-version-history`,
-`origin/main` 위에 커밋 24개. 테스트 70개 통과, 빌드 통과.
+**구현 완료. PR 대기.** 브랜치 `feature/sw-version-history` 원격에 푸시됨 (`1b69473`).
+`origin/main` 위 커밋 38개.
 
-동작하는 것: 파서(항목 34건·알람 3건 추출), 버전 정규화, Redmine 클라이언트,
-쿼리 레이어, 끊김 계산, 그리고 화면 3개(설비 목록·타임라인·검색).
+```
+tsc     0 errors
+tests   88 passing (7 files)
+build   성공
+DB      배포 90 · 항목 8 · PMS 참조 145 · 캐시 73
+```
 
-| 태스크 | 상태 |
-|---|---|
-| 1–8, 10–13 | 완료 (리뷰 승인) |
-| 14 원문 보기 | 진행 중 |
-| **9 이관 90건** | **DB 프로비저닝 대기** |
-| 15–18 | DB 대기 |
+18개 태스크 전부 리뷰 승인. 최종 전체 브랜치 리뷰가 차단 6건(태스크 간 이음매)을
+찾아 일괄 수정했고 재리뷰에서 "Ready to merge" 판정.
 
-## 막혀 있는 것 — 사람이 해야 함
+PR 본문 초안: `.superpowers/sdd/2026-09-01-sw-version-history/PR-BODY.md`
+작업 기록 전문(판단 19건 · 이월 minor 21건): 같은 폴더의 `progress.md`
 
-1. `supabase/schema-v2.sql` 을 Supabase SQL Editor 에서 실행 (새 테이블 5개 추가만)
-2. `.env.local` 생성 — Supabase URL·anon·service_role, PMS_API_KEY, PMS_BASE_URL
-3. `git push -u origin feature/sw-version-history` — 이 환경에 GitHub 자격증명 없음
+## 다음 할 일
 
-셋 다 되면 Task 9·15·16·17 이 한 번에 풀린다.
+1. PR 생성 → 병합
+2. 병합 후 `backup/sw-version-history-prerebase` 정리
+3. 운영 후 구 DB 테이블 6개 DROP 판단 (지금은 유지 — 사용자 결정)
 
-## 리베이스 이력
+## 남겨둔 한계 (PR 본문에도 명시)
 
-로컬 리포는 GitHub 리포의 클론이 아니라 별도 `git init` 이었고 공통 조상이 없었다.
-로컬에 없던 4,326줄(release-note-bulk-parser, document-model, components/ui/* 등)이
-원격에 있었다. 2026-09-01 에 `git rebase --onto origin/main 46e8f46` 으로 정리했고
-충돌 0건. 백업 브랜치: `backup/sw-version-history-prerebase`.
+- `/api/pms/sync` 가 무제한 비밀번호 검사. 삭제한 죽은 라우트와 같은 패턴이나
+  정당한 호출자가 있어 범위 밖으로 뒀다. 후속 검토 필요
+- 업로드 비밀번호가 `dashboard_settings` 에 평문 저장되고 해시보다 우선한다.
+  로그인 테스트 불가 상태에서 자격증명 처리를 바꾸면 업로드가 막힐 위험이 있어 유지
+- `insertDeployment` 의 자식 행 교체가 트랜잭션이 아니다. 커밋 라우트 입력 검증으로
+  알려진 경로는 막았으나 원자성은 Postgres 함수가 필요
+- 조회 화면 무인증. 공개 URL 배포 시 고객사 사이트명 노출
 
 ## 확인된 사실
 
