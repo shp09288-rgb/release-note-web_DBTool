@@ -8,11 +8,11 @@ import type { PmsIssueRow } from '@/lib/queries/pms';
 import { ItemDetail } from './item-detail';
 
 function VersionArrow({ from, to }: { from: string; to: string }) {
-  if (!from && !to) return <span className="text-slate-400">-</span>;
+  if (!from && !to) return <span className="text-park-muted">-</span>;
   if (!from) return <span className="font-mono text-sm">{to}</span>;
   return (
     <span className="font-mono text-sm">
-      {from} <span className="text-slate-400">→</span> {to}
+      {from} <span className="text-park-muted">→</span> {to}
     </span>
   );
 }
@@ -62,23 +62,23 @@ export function DeploymentTimeline({
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-park-navy">{dep.deployed_on ?? '날짜 미상'}</span>
                     {isLegacy ? (
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                      <span className="rounded bg-park-surface px-2 py-0.5 text-xs text-park-muted">
                         과거 기록
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-1 space-y-0.5 text-slate-600">
+                  <div className="mt-1 space-y-0.5 text-park-ink">
                     <div>
-                      <span className="mr-2 text-xs text-slate-400">XEA</span>
+                      <span className="mr-2 text-xs text-park-muted">XEA</span>
                       <VersionArrow from={dep.xea_from_raw} to={dep.xea_to_raw} />
                     </div>
                     <div>
-                      <span className="mr-2 text-xs text-slate-400">XES</span>
+                      <span className="mr-2 text-xs text-park-muted">XES</span>
                       <VersionArrow from={dep.xes_from_raw} to={dep.xes_to_raw} />
                     </div>
                   </div>
                 </div>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-park-muted">
                   {hasItems ? `${dep.items.length}개 항목` : '요약만'}
                 </span>
               </button>
@@ -86,7 +86,7 @@ export function DeploymentTimeline({
               {isOpen ? (
                 <div className="px-5 pb-5">
                   {!hasItems ? (
-                    <p className="whitespace-pre-line border-t border-park-border pt-4 text-sm text-slate-600">
+                    <p className="whitespace-pre-line border-t border-park-border pt-4 text-sm text-park-ink">
                       {dep.body_text || '내용 없음'}
                     </p>
                   ) : (

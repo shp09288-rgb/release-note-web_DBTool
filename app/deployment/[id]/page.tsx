@@ -17,7 +17,7 @@ export default async function DeploymentPage({
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10">
-      <Link href={back} className="text-sm text-slate-500 hover:underline">
+      <Link href={back} className="text-sm text-park-muted hover:underline">
         ← {deployment.site} / {deployment.equipment} 타임라인
       </Link>
 
@@ -25,7 +25,7 @@ export default async function DeploymentPage({
         <h1 className="text-2xl font-extrabold text-park-navy">
           {deployment.deployed_on ?? '날짜 미상'} 배포 원문
         </h1>
-        <p className="mt-1 font-mono text-sm text-slate-500">
+        <p className="mt-1 font-mono text-sm text-park-muted">
           XEA {deployment.xea_to_raw || '-'} · XES {deployment.xes_to_raw || '-'}
         </p>
       </header>
@@ -41,10 +41,10 @@ export default async function DeploymentPage({
         />
       ) : (
         <div className="rounded-2xl border border-park-border bg-white p-6">
-          <p className="mb-3 text-sm text-slate-500">
+          <p className="mb-3 text-sm text-park-muted">
             원문 문서가 없는 과거 기록입니다. 요약만 남아 있습니다.
           </p>
-          <p className="whitespace-pre-line text-sm text-slate-700">
+          <p className="whitespace-pre-line text-sm text-park-ink">
             {deployment.body_text || '내용 없음'}
           </p>
         </div>
