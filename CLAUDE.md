@@ -54,8 +54,9 @@ git 히스토리에도 남는다. 문서에는 환경변수 **이름만** 쓴다
   정렬은 `build`로, 표시는 `raw`로.
 - **검색은 `ILIKE`로 충분하다.** 배포 100건 규모다. `tsvector`는 한국어에서
   이득이 없다. 느려지면 그때 `pg_trgm`을 단다.
-- 기존 `components/dashboard/`와 Park Systems 스타일을 재사용한다. 새로 만들기 전에
-  먼저 있는지 본다.
+- 기존 `components/history/`, `components/upload/`와 `app/globals.css`의
+  Park Systems 스타일 토큰(`park-navy`, `park-border`)을 재사용한다. 새로 만들기
+  전에 먼저 있는지 본다.
 
 ## 함정
 

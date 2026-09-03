@@ -7,16 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import-data": "tsx scripts/import-json-to-supabase.ts",
+    "migrate-legacy": "tsx scripts/migrate-legacy.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
     "cheerio": "^1.2.0",
-    "docx": "^9.6.1",
     "dotenv": "^17.4.2",
-    "jszip": "^3.10.1",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4"

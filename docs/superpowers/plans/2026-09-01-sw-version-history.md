@@ -96,6 +96,7 @@ export default defineConfig({
     include: [
       'lib/version.test.ts',
       'lib/parsers/**/*.test.ts',
+      'lib/pms/**/*.test.ts',
       'lib/queries/**/*.test.ts',
       'scripts/**/*.test.ts',
     ],
@@ -1160,7 +1161,15 @@ export type PmsIssue = {
   closedOn: string | null;
 };
 
-const SITE = /([A-Z]{2,4}\s?[A-Z]?\d{1,2})/;
+// 사이트 표기는 '벤더 + 공백 + 팹' 이다: SDC A5, SDC A3, LGD AP3.
+//
+// 세 가지 가드가 전부 필요하다.
+//  (?<![A-Za-z0-9-])  장비 모델명 안쪽을 물지 않게 한다. 이게 없으면
+//                     'NX-TSH1518' 에서 'TSH15' 를 사이트로 착각한다.
+//  \s + [A-Z]{1,2}    'LGD AP3' 를 통째로 잡는다. [A-Z]? 로는 'AP3' 만 잡혀
+//                     LGD 사이트 3곳이 전부 잘린다.
+//  (?!\d)             긴 숫자열을 잘라 가짜 팹 번호를 만들지 않게 한다.
+const SITE = /(?<![A-Za-z0-9-])([A-Z]{2,4}\s[A-Z]{1,2}\d{1,2})(?!\d)/;
 
 /**
  * Redmine 제목에서 이슈가 발생한 사이트를 뽑는다.
@@ -2583,14 +2592,14 @@ export function ItemDetail({ item }: { item: DeploymentItemRow }) {
   return (
     <div className="border-t border-park-border py-4">
       <div className="flex flex-wrap items-center gap-2">
-        {item.pmsNo ? (
+        {item.pms_no ? (
           <a
-            href={`${PMS_BASE}/issues/${item.pmsNo}`}
+            href={`${PMS_BASE}/issues/${item.pms_no}`}
             target="_blank"
             rel="noreferrer"
             className="rounded bg-slate-100 px-2 py-0.5 text-xs font-bold text-park-navy hover:bg-slate-200"
           >
-            PMS #{item.pmsNo}
+            PMS #{item.pms_no}
           </a>
         ) : null}
         {item.flags.includes('not_applied') ? (
@@ -3193,7 +3202,7 @@ type ParseResponse = {
   ok: boolean;
   fileName: string;
   document: ParsedDocument;
-  duplicate: { id: string; deployed_on: string | null } | null;
+  duplicate: { id: string; deployedOn: string | null; message: string } | null;
   message?: string;
 };
 
@@ -3351,9 +3360,8 @@ export function UploadWizard() {
 
       {parsed.duplicate ? (
         <div className="rounded-2xl border border-red-300 bg-red-50 p-5 text-sm text-red-800">
-          같은 사이트·버전의 배포가 이미 등록되어 있습니다
-          {parsed.duplicate.deployed_on ? ` (${parsed.duplicate.deployed_on})` : ''}. 저장하면
-          덮어씁니다.
+          {parsed.duplicate.message}
+          {parsed.duplicate.deployedOn ? ` (기존 배포일 ${parsed.duplicate.deployedOn})` : ''}
         </div>
       ) : null}
 
@@ -3649,7 +3657,7 @@ const issues = await getCachedIssues(pmsNumbers);
 />
 ```
 
-`components/history/deployment-timeline.tsx`의 props에 `issues: Record<number, PmsIssueRow>`를 추가하고 `<ItemDetail item={item} issue={issues[item.pmsNo ?? -1]} />` 로 넘긴다.
+`components/history/deployment-timeline.tsx`의 props에 `issues: Record<number, PmsIssueRow>`를 추가하고 `<ItemDetail item={item} issue={issues[item.pms_no ?? -1]} />` 로 넘긴다.
 
 `components/history/item-detail.tsx`의 시그니처를 바꾼다:
 
