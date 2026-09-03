@@ -25,9 +25,16 @@ Supabase 키는 새 방식(`sb_secret_`)으로 교체 완료. 레거시 JWT 키�
 
 ## 다음 할 일
 
-1. PR 생성 → 병합
-2. 병합 후 `backup/sw-version-history-prerebase` 정리
-3. 운영 후 구 DB 테이블 6개 DROP 판단 (지금은 유지 — 사용자 결정)
+급한 것 없음. 운영하면서 판단할 것들:
+
+1. **LGD P9 문서 실제 업로드** — 파서는 검증됐으나 사람이 설비 번호와 배포일을
+   채워 저장하는 흐름은 아직 안 돌려봤다
+2. 새 문서를 올린 뒤 `POST /api/pms/sync` 로 PMS 캐시 갱신 (`SETUP.md` 참고).
+   Vercel 의 PMS 변수는 Production 에만 걸려 있다 — 프리뷰에서 쓰려면 확장 필요
+3. 구 DB 테이블 6개 DROP 판단 (지금은 유지 — 사용자 결정)
+4. 레거시 JWT 키 비활성화 (새 방식 키로 완전히 넘어간 것을 확인했으므로 가능)
+5. 로컬 정리: `backup/sw-version-history-prerebase`,
+   `feature/dashboard-ui-redesign`, `feature/editor-ui-redesign` 삭제 가능
 
 ## 남겨둔 한계 (PR 본문에도 명시)
 
