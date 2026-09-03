@@ -54,8 +54,15 @@ export function ItemDetail({
 
       {item.improvements.map((group) => (
         <div key={group.component} className="mt-3">
-          <span className="rounded bg-park-navy px-2 py-0.5 text-xs font-bold uppercase text-white">
-            {group.component}
+          {/* verify 는 개선이 아니라 검증 절차다. 같은 배지 색을 쓰면 개선으로 읽힌다. */}
+          <span
+            className={
+              group.component === 'verify'
+                ? 'rounded border border-park-accent px-2 py-0.5 text-xs font-bold text-park-navy'
+                : 'rounded bg-park-navy px-2 py-0.5 text-xs font-bold uppercase text-white'
+            }
+          >
+            {group.component === 'verify' ? '검증' : group.component}
           </span>
           <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-park-ink">
             {group.lines.map((line, idx) => (

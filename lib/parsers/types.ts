@@ -1,7 +1,11 @@
 export type ParseWarning = { field: string; message: string };
 
+/**
+ * 'verify' 는 신 양식(Update Report)의 .ver 블록이다 — 판단·확인 방법·체크리스트.
+ * 개선 내용은 아니지만 같은 항목에 속하므로 여기에 함께 담아 본문 검색에 걸리게 한다.
+ */
 export type ParsedImprovement = {
-  component: 'xea' | 'xes';
+  component: 'xea' | 'xes' | 'verify';
   lines: string[];
 };
 

@@ -196,3 +196,100 @@ describe('parseUpdateListHtml — 신규 Alarm', () => {
     expect(doc.alarms.every((a) => /^\d+$/.test(a.alarmId))).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 신 양식 (Update Report) — 2026-09 에 유관부서가 바꾼 틀.
+// 내용은 같고 감싸는 구조만 다르다. 두 양식이 한 파서에서 모두 읽혀야 한다.
+// ---------------------------------------------------------------------------
+
+const FIXTURE_P9 = path.resolve(__dirname, '../../docs/LGD_P9_Update_Report.html');
+
+describe('parseUpdateListHtml — 신 양식', () => {
+  let doc: ParsedDocument;
+  beforeAll(() => {
+    doc = parseUpdateListHtml(readFileSync(FIXTURE_P9, 'utf-8'));
+  });
+
+  it('제목 줄에서 사이트와 모델을 읽는다', () => {
+    // 구 양식의 .meta-grid 가 없고 <h1> + <div class="sub"> 한 줄뿐이다.
+    expect(doc.header.site).toBe('LGD P9');
+    expect(doc.header.model).toBe('NX-TSH1518');
+  });
+
+  it('한 줄에 뭉친 버전 구간을 읽는다', () => {
+    expect(doc.header.xeaFromBuild).toBe(4027);
+    expect(doc.header.xeaToBuild).toBe(4338);
+    expect(doc.header.xesFromBuild).toBe(1785);
+    expect(doc.header.xesToBuild).toBe(2037);
+  });
+
+  it('section 이 아니라 h2 에 id 가 있어도 항목 18건을 읽는다', () => {
+    expect(doc.items).toHaveLength(18);
+  });
+
+  it('앵커를 항목 자체의 id 에서 읽는다', () => {
+    expect(doc.items.map((i) => i.anchorId)).toContain('p4900');
+    expect(doc.items.map((i) => i.anchorId)).toContain('pjobresult');
+  });
+
+  it('PMS 번호가 없는 항목도 살린다', () => {
+    const item = doc.items.find((i) => i.anchorId === 'pjobresult')!;
+    expect(item.pmsNo).toBeNull();
+  });
+
+  it('PMS 번호가 여러 개인 항목을 모두 읽는다', () => {
+    const multi = doc.items.filter((i) => i.pmsExtra.length > 0);
+    expect(multi).toHaveLength(2);
+  });
+
+  it('grpx 클래스의 개선 목록을 읽는다', () => {
+    const item = doc.items.find((i) => i.anchorId === 'p4900')!;
+    const xea = item.improvements.find((g) => g.component === 'xea')!;
+    expect(xea.lines.length).toBeGreaterThan(0);
+    expect(xea.lines[0]).toContain('Door 상태');
+  });
+
+  it('검증 블록을 verify 그룹으로 담는다', () => {
+    const withVerify = doc.items.filter((i) =>
+      i.improvements.some((g) => g.component === 'verify')
+    );
+    expect(withVerify).toHaveLength(18);
+    const item = doc.items.find((i) => i.anchorId === 'p4900')!;
+    const verify = item.improvements.find((g) => g.component === 'verify')!;
+    expect(verify.lines.some((l) => l.startsWith('판단:'))).toBe(true);
+    expect(verify.lines.some((l) => l.startsWith('확인:'))).toBe(true);
+  });
+
+  it('배지가 스스로 단 라벨에서 요청건을 유도한다', () => {
+    // 신 양식 범례는 'mine' 을 쓰고 항목은 'req' 를 쓴다 — 범례만으로는 끊긴다.
+    // 배지 자체 텍스트('요청건')가 폴백이다.
+    expect(doc.items.filter((i) => i.flags.includes('site_requested'))).toHaveLength(1);
+  });
+
+  it('신 양식에는 미적용 개념이 없으므로 not_applied 는 붙지 않는다', () => {
+    expect(doc.items.filter((i) => i.flags.includes('not_applied'))).toHaveLength(0);
+  });
+
+  it('알람 4건을 읽는다', () => {
+    expect(doc.alarms).toHaveLength(4);
+    expect(doc.alarms.map((a) => a.alarmId)).toEqual(['20105', '20144', '20158', '140005']);
+  });
+});
+
+describe('parseUpdateListHtml — 조용한 실패 방지', () => {
+  it('항목 마크업이 있는데 하나도 못 읽으면 경고한다', () => {
+    // 파서가 아는 어떤 섹션 구조에도 맞지 않는 문서.
+    const doc = parseUpdateListHtml(
+      '<body><div class="item" id="pX"><h4>제목</h4></div></body>'
+    );
+    expect(doc.items).toHaveLength(0);
+    const w = doc.warnings.find((x) => x.field === 'items');
+    expect(w).toBeDefined();
+    expect(w!.message).toContain('양식이 바뀌었을');
+  });
+
+  it('항목 마크업 자체가 없으면 그 경고는 내지 않는다', () => {
+    const doc = parseUpdateListHtml('<body><p>본문 없음</p></body>');
+    expect(doc.warnings.some((x) => x.field === 'items')).toBe(false);
+  });
+});

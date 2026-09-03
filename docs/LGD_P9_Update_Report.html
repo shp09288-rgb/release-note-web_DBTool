@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[LGD P9] SW Update 적용 내역 및 검증</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1c2530; --muted:#5b6b7d; --line:#e1e7ee;
+    --brand:#0a4d8c; --brand2:#1769aa; --ok:#1d8f4e; --okbg:#e7f6ee;
+    --warn:#b5811a; --warnbg:#fdf4e0; --bad:#c0392b; --badbg:#fbeae8;
+    --mono:#0b2440; --code:#f5f7fa; --chip:#eef3f8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.65;font-size:15px;word-break:keep-all;}
+  code,.pms,.mono{word-break:break-all}
+  .layout{display:flex;align-items:flex-start;gap:0;max-width:1320px;margin:0 auto}
+  .wrap{flex:1;min-width:0;max-width:1000px;padding:28px 22px 80px;}
+
+  /* ── 좌측 목차 ── */
+  nav.toc{width:296px;flex:none;position:sticky;top:0;max-height:100vh;overflow-y:auto;
+    padding:26px 8px 40px 10px;font-size:13px}
+  nav.toc .toc-title{font-weight:700;color:var(--brand);font-size:13.5px;letter-spacing:.4px;margin:0 0 4px 6px}
+  nav.toc .legend{margin:0 0 10px 6px;font-size:11.5px;color:var(--muted);line-height:1.9}
+  nav.toc .legend span{display:inline-flex;align-items:center;gap:5px;margin-right:9px}
+  nav.toc a{display:flex;align-items:center;gap:6px;color:#36475a;text-decoration:none;
+    border-radius:7px;padding:4px 7px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  nav.toc a:hover{background:var(--chip);color:var(--brand)}
+  nav.toc a.active{background:#e4edf7;color:var(--brand);font-weight:700}
+  nav.toc a.sub.active{border-left-color:var(--brand2)}
+  nav.toc a.sec{font-weight:700;color:var(--mono);margin-top:10px}
+  nav.toc a.hide,nav.toc .tocgrp.hide{display:none}
+  nav.toc .tocgrp{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;
+    margin:10px 0 2px 15px;padding:0 0 0 11px;border-left:2px solid #dbe3ec}
+  nav.toc a.sub{font-size:12.5px;margin-left:15px;padding-left:11px;
+    border-left:2px solid #dbe3ec;border-radius:0 7px 7px 0}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.v1{background:var(--warn)} .dot.v2{background:var(--ok)} .dot.v3{background:#b6c0cb}
+  .mine{font-size:9.5px;font-weight:700;color:var(--bad);border:1px solid #f1c9c3;
+    background:var(--badbg);border-radius:4px;padding:0 4px;flex:none;line-height:1.5}
+  .tocname{overflow:hidden;text-overflow:ellipsis}
+  @media(max-width:1120px){nav.toc{display:none}}
+
+  header.doc{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
+    border-radius:14px;padding:26px 30px;}
+  header.doc .tag{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    padding:3px 12px;border-radius:999px;font-size:12.5px;margin-bottom:10px;}
+  header.doc h1{margin:0 0 4px;font-size:23px;font-weight:700;}
+  header.doc .sub{opacity:.92;font-size:13.5px;margin-top:6px}
+
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 24px;margin:16px 0;}
+  h2.s{font-size:17px;margin:2px 0 12px;color:var(--brand);display:flex;align-items:center;gap:9px;
+    border-bottom:2px solid var(--chip);padding-bottom:8px}
+  h2.s .n{background:var(--brand);color:#fff;width:24px;height:24px;border-radius:7px;display:inline-flex;
+    align-items:center;justify-content:center;font-size:13px;flex:none}
+
+  .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 0}
+  .num{border:1px solid var(--line);border-radius:10px;padding:11px 14px;background:#fbfcfe}
+  .num b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:3px}
+  .num .v{font-size:22px;font-weight:700;color:var(--brand)}
+  .num .v small{font-size:13px;font-weight:600;color:var(--muted)}
+  .num.hi{background:var(--warnbg);border-color:#ecd9a8}
+  .num.hi .v{color:var(--warn)}
+  .num.done{background:var(--okbg);border-color:#b9e3c9}
+  .num.done .v{color:var(--ok)}
+
+  .blk{margin:15px 0 0}
+  .blk:first-of-type{margin-top:4px}
+  .blk .lbl{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.7px;
+    margin-bottom:7px;padding-left:2px}
+  .blk .sublbl{font-size:11.5px;color:var(--muted);margin:8px 0 0 2px}
+  .qa{margin:17px 0 0;padding:0 0 0 15px;border-left:3px solid #d8e3ef}
+  .qa h3{margin:0 0 6px;font-size:14.5px;color:var(--brand);font-weight:700;line-height:1.5}
+  .qa p{margin:0;font-size:14px;line-height:1.8;color:#33465a;max-width:76ch}
+  .qa p + p{margin-top:7px}
+  .keybox{margin:20px 0 0;background:var(--warnbg);border:1px solid #ecd9a8;
+    border-radius:10px;padding:14px 18px;font-size:14.5px;line-height:1.75}
+  .keybox .big{font-size:17px;font-weight:700;color:var(--warn)}
+  .keybox .hint{display:block;margin-top:5px;font-size:13px;color:#7a6a3f}
+
+  /* ── 필터 ── */
+  .filter{position:sticky;top:0;z-index:5;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:11px 16px;margin:16px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    box-shadow:0 2px 10px rgba(20,40,70,.06)}
+  .filter button{font:inherit;font-size:13px;padding:5px 14px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--muted)}
+  .filter button:hover{border-color:var(--brand2);color:var(--brand)}
+  .filter button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .filter .prog{margin-left:auto;font-size:13px;color:var(--muted)}
+  .filter .prog b{color:var(--brand);font-size:15px}
+  .filter .rst{font-size:12.5px;padding:3px 10px}
+
+  /* ── 항목 카드 ── */
+  h3.grp{font-size:14px;color:var(--mono);margin:22px 0 8px;letter-spacing:.3px}
+  .item{border:1px solid #d8e3ef;border-radius:10px;background:#eef3f9;
+    padding:14px 18px 15px;margin:12px 0;scroll-margin-top:70px}
+  .item.hide{display:none}
+  .item h4{margin:0 0 8px;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pms{font-family:Consolas,"D2Coding",monospace;font-size:14px;font-weight:700;
+    color:var(--brand2);text-decoration:none;border-bottom:1px dashed var(--brand2)}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .chip.req{background:var(--badbg);color:var(--bad);border:1px solid #f1c9c3}
+  .chip.site{background:var(--chip);color:var(--muted);border:1px solid var(--line)}
+  .chip.v1{background:var(--warnbg);color:var(--warn);border:1px solid #ecd9a8}
+  .chip.v2{background:var(--okbg);color:var(--ok);border:1px solid #b9e3c9}
+  .chip.v3{background:#eceff3;color:#7b8896;border:1px solid var(--line)}
+
+  .phen{background:#fff;border:1px solid #dbe4ee;border-left:3px solid var(--brand2);
+    border-radius:6px;padding:9px 13px;margin:8px 0;font-size:14px;color:#26384c}
+  .phen b{color:var(--brand);font-size:12.5px}
+  .hist{background:#fffaf0;border:1px solid #ecd9a8;border-left:3px solid var(--warn);
+    border-radius:6px;padding:9px 13px;margin:8px 0;font-size:14px;color:#4a3c1e}
+  .hist b{color:var(--warn);font-size:12.5px}
+  .imp{font-size:12.5px;color:var(--brand);font-weight:700;margin:10px 0 4px}
+  .subimp{font-size:12px;font-weight:700;color:#54677c;margin:9px 0 1px 2px}
+  .grpx{display:inline-block;font-family:Consolas,monospace;font-size:12px;font-weight:700;
+    padding:1px 10px;border-radius:6px;margin:4px 0 0}
+  .grpx.xea{background:#e9f1fb;border:1px solid #c9ddf3;color:#12507f}
+  .grpx.xes{background:#f0ecfb;border:1px solid #d6cdf1;color:#4a3585}
+  ul{margin:4px 0 8px;padding-left:20px} li{margin:4px 0}
+
+  /* ── 검증 블록 ── */
+  .ver{background:#fff;border:1px solid #e0cfa8;border-radius:8px;padding:12px 15px;margin:12px 0 0}
+  .ver.parked{border-color:#b9e3c9;background:#f6fcf8}
+  .ver.na{border-color:var(--line);background:#fafbfc}
+  .ver .vh{font-size:12.5px;font-weight:700;color:var(--warn);letter-spacing:.3px;margin-bottom:7px}
+  .ver.parked .vh{color:var(--ok)} .ver.na .vh{color:var(--muted)}
+  .ver dl{margin:0;display:grid;grid-template-columns:78px 1fr;gap:5px 12px;font-size:13.5px}
+  .ver dt{color:var(--muted);font-weight:600}
+  .ver dd{margin:0}
+  .ck{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:13.5px}
+  .ck label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:4px 0}
+  .ck input{width:16px;height:16px;margin:2px 0 0;accent-color:var(--brand2);flex:none;cursor:pointer}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--code);
+    border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:12.5px}
+  .note{font-size:12.5px;color:var(--muted);margin-top:5px}
+
+  /* 표 */
+  table{width:100%;border-collapse:collapse;margin:6px 0 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top}
+  th{background:var(--chip);color:var(--mono);font-size:12.5px;font-weight:700}
+  td.c,th.c{text-align:center}
+  td.ckcell{text-align:center}
+  td.ckcell input{width:16px;height:16px;accent-color:var(--brand2);cursor:pointer;margin:1px 0 0}
+  td.ref{text-align:center;white-space:nowrap}
+  td.ref a{font-family:Consolas,monospace;font-size:12.5px;color:var(--brand2);text-decoration:none}
+  .memo{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .pill{display:inline-block;font-family:Consolas,monospace;font-size:12.5px;font-weight:700;
+    background:var(--badbg);color:var(--bad);border:1px solid #f1c9c3;border-radius:999px;padding:1px 10px}
+
+  /* 접이식 화면 이미지 */
+  details.shot{margin:10px 0 0;border:1px solid #d8e3ef;border-radius:8px;background:#fff}
+  details.shot>summary{cursor:pointer;padding:8px 13px;font-size:13px;font-weight:700;
+    color:var(--brand2);list-style:none;user-select:none}
+  details.shot>summary::-webkit-details-marker{display:none}
+  details.shot>summary::before{content:"\25B8  "}
+  details.shot[open]>summary::before{content:"\25BE  "}
+  details.shot[open]>summary{border-bottom:1px solid var(--line)}
+  details.shot .shots{padding:13px}
+  details.shot figure{margin:0 0 15px}
+  details.shot figure:last-child{margin-bottom:0}
+  details.shot img{width:100%;height:auto;display:block;
+    border:1px solid var(--line);border-radius:5px}
+  details.shot figcaption{font-size:12.5px;color:var(--muted);margin-top:6px}
+  li>details.shot{margin:7px 0 4px}
+
+  @media print{
+    body{background:#fff;font-size:12px}
+    .filter{display:none} nav.toc{display:none} section{break-inside:auto;box-shadow:none}
+    .item{break-inside:avoid} .item.hide{display:block !important} tr{break-inside:avoid}
+    details.shot>*{display:block !important}
+    header.doc{border-radius:0}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc">
+  <div class="toc-title">목차</div>
+  <div class="legend">
+    <span><i class="dot v1"></i>현장 확인</span><span><i class="dot v2"></i>파크 검증</span><span><i class="dot v3"></i>해당 없음</span><br>
+    <span><i class="mine">요청</i>요청건</span>
+  </div>
+  <a class="sec" href="#s1">1. 이번 업데이트 구성</a>
+  <a class="sec" href="#s2">2. 설치 전 / 후 확인</a>
+  <a class="sec" href="#s4">3. 적용 내역 및 검증</a>
+
+  <div class="tocgrp" data-g="g1">CIM</div>
+  <a class="sub" href="#p4900" data-req="0" data-v="v1" data-g="g1"><i class="dot v1"></i><span class="tocname">#4900 Shutter Door 상태 전달</span></a>
+  <a class="sub" href="#p4552" data-req="0" data-v="v2" data-g="g1"><i class="dot v2"></i><span class="tocname">#4552 재연결 시 Control State</span></a>
+  <a class="sub" href="#p4931" data-req="0" data-v="v3" data-g="g1"><i class="dot v3"></i><span class="tocname">#4931 Lot ID / Sample ID 구분</span></a>
+
+  <div class="tocgrp" data-g="g2">Feature Align</div>
+  <a class="sub" href="#p4596" data-req="0" data-v="v1" data-g="g2"><i class="dot v1"></i><span class="tocname">#4596 Scan Line 표시 추가</span></a>
+  <a class="sub" href="#p4596m" data-req="0" data-v="v2" data-g="g2"><i class="dot v2"></i><span class="tocname">#4596 Fine Align 결과 표시 정정</span></a>
+
+  <div class="tocgrp" data-g="g3">Tip Check</div>
+  <a class="sub" href="#p4770" data-req="0" data-v="v1" data-g="g3"><i class="dot v1"></i><span class="tocname">#4770 Manual Tip Check 저장</span></a>
+
+  <div class="tocgrp" data-g="g4">PMAC</div>
+  <a class="sub" href="#p4727" data-req="0" data-v="v1" data-g="g4"><i class="dot v1"></i><span class="tocname">#4727·4760·4827 로그 및 Emergency.plc</span></a>
+  <a class="sub" href="#p4141" data-req="0" data-v="v1" data-g="g4"><i class="dot v1"></i><span class="tocname">#4141 Lift Pin 원점 복귀 순서</span></a>
+  <a class="sub" href="#p4952" data-req="0" data-v="v2" data-g="g4"><i class="dot v2"></i><span class="tocname">#4952 Fatal Following Error</span></a>
+  <a class="sub" href="#p3807" data-req="0" data-v="v2" data-g="g4"><i class="dot v2"></i><span class="tocname">#3807·4881 Execution Timeout 처리</span></a>
+  <a class="sub" href="#p4846" data-req="0" data-v="v2" data-g="g4"><i class="dot v2"></i><span class="tocname">#4846 Clamp Open / Close Time</span></a>
+
+  <div class="tocgrp" data-g="g5">PLC</div>
+  <a class="sub" href="#p4842" data-req="0" data-v="v1" data-g="g5"><i class="dot v1"></i><span class="tocname">#4842 Ionizer 알람 및 FDC Upload</span></a>
+  <a class="sub" href="#p4071" data-req="0" data-v="v1" data-g="g5"><i class="dot v1"></i><span class="tocname">#4071 Shutter Open 전 Ionizer Off</span></a>
+
+  <div class="tocgrp" data-g="g6">측정 / 분석</div>
+  <a class="sub" href="#p4941" data-req="1" data-v="v1" data-g="g6"><i class="dot v1"></i><i class="mine">요청</i><span class="tocname">#4941 Vertex 분석 소수점 자리수</span></a>
+
+  <div class="tocgrp" data-g="g7">UI / 편의</div>
+  <a class="sub" href="#p4687" data-req="0" data-v="v3" data-g="g7"><i class="dot v3"></i><span class="tocname">#4687 Manual Load / Unload 버튼</span></a>
+
+  <div class="tocgrp" data-g="g8">안정화 / 성능</div>
+  <a class="sub" href="#pjobresult" data-req="0" data-v="v1" data-g="g8"><i class="dot v1"></i><span class="tocname">Job Result DB Loading 지연</span></a>
+  <a class="sub" href="#p4666" data-req="0" data-v="v2" data-g="g8"><i class="dot v2"></i><span class="tocname">#4666 XEService 비정상 종료</span></a>
+  <a class="sub" href="#p4866" data-req="0" data-v="v3" data-g="g8"><i class="dot v3"></i><span class="tocname">#4866 Camera Network 부하</span></a>
+
+  <a class="sec" href="#s5">4. 신규 Alarm</a>
+  <a class="sec" href="#s6">5. 이상 발생 시 확인</a>
+</nav>
+
+<div class="wrap">
+
+  <header class="doc">
+    <h1>LGD P9 SW Update 적용 내역 및 검증</h1>
+    <div class="sub">NX-TSH1518 · XEA Dev4027 → Dev4338 · XEService Dev1785 → Dev2037</div>
+  </header>
+
+  <section>
+    <h2 class="s" id="s1"><span class="n">1</span>이번 업데이트 구성</h2>
+
+    <div class="blk">
+      <div class="lbl">항목 구성</div>
+      <div class="nums">
+        <div class="num"><b>전체 항목</b><div class="v">18<small> 건</small></div></div>
+        <div class="num"><b>요청건</b><div class="v">1<small> 건</small></div></div>
+        <div class="num"><b>공통 반영분</b><div class="v">17<small> 건</small></div></div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="lbl">현장 검증</div>
+      <div class="nums">
+        <div class="num hi"><b>현장 확인 필요</b><div class="v">9<small> 건</small></div></div>
+        <div class="num done"><b>파크 검증 완료</b><div class="v">6<small> 건</small></div></div>
+      </div>
+      <div class="sublbl">P9 동작에 변화가 없는 항목은 별도로 표기했습니다.</div>
+    </div>
+
+    <div class="keybox">
+      전체 18건 중 현장에서 실제로 확인이 필요한 항목은 <span class="big">9건</span>입니다.
+      <span class="hint">상단 필터에서 [현장 확인 필요] 를 누르면 해당 항목만 표시됩니다.
+        [요청건] 을 누르면 P9 에서 요청한 항목만 표시됩니다.</span>
+    </div>
+
+    <div class="blk">
+      <div class="lbl">설비별 옵션 현황</div>
+      <table>
+        <tr><th>기능</th><th style="width:290px">옵션 위치</th><th style="width:210px">P9</th></tr>
+        <tr><td>Shutter Open 전 Ionizer Off</td>
+          <td>XEA 내부 LGD 분기</td>
+          <td>동작 <span class="memo">LGD 계열 설비</span></td></tr>
+        <tr><td>CIM Lot ID 구분 전달</td>
+          <td><code>SecsGem/Info/UseCimLotId</code></td>
+          <td>미적용 <span class="memo">기본값 0 · CIM 수정 선행 필요</span></td></tr>
+        <tr><td>Servo On Settling Time</td>
+          <td><code>XYStage/ServoOnSettlingTimeMiliSec</code></td>
+          <td>적용 <span class="memo">기본값 6000ms</span></td></tr>
+        <tr><td>Emergency.plc 자동 다운로드</td>
+          <td><code>XYStage/Info/DownloadEmergencyProgram</code></td>
+          <td>적용 <span class="memo">기본값 1</span></td></tr>
+        <tr><td>미사용 Head Camera Live Off</td>
+          <td>설비 Head 구성</td>
+          <td>미동작 <span class="memo">Single Head</span></td></tr>
+        <tr><td>Ionizer Head 수</td>
+          <td><code>FacilityController/Ionizer/NumberOfHeads</code></td>
+          <td>설정값 확인 필요</td></tr>
+        <tr><td>Lift Pin 사용</td>
+          <td><code>XYStage/LiftPin/bUse</code> · <code>XYStage/Info/bUseLiftPinUnit</code></td>
+          <td>설정값 확인 필요</td></tr>
+        <tr><td>Manual Load / Unload Button 표시</td>
+          <td>Setup View / Preference</td>
+          <td>설정값 확인 필요</td></tr>
+      </table>
+      <div class="note">Display SW 는 여러 설비가 공통으로 사용하므로, 설비마다 갈리는 동작은 위와 같이 옵션으로 분리되어 있습니다.
+        <code>설정값 확인 필요</code> 로 표기한 3건은 아래 설치 전 / 후 확인 표에서 값을 확인해 주시기 바랍니다.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="s" id="s2"><span class="n">2</span>설치 전 / 후 확인</h2>
+    <table>
+      <tr><th style="width:34px"></th><th>항목</th><th style="width:80px">참조</th></tr>
+
+      <tr><td class="ckcell"><input type="checkbox" id="ck-pre-1"></td>
+        <td>XES DB Ionizer <code>NumberOfHeads</code> = 실제 연결 Head 수
+          <span class="memo">실제와 다르면 Head 간 데이터가 밀리고 FDC VID 매핑이 어긋납니다.</span></td>
+        <td class="ref"><a href="#p4842">#4842</a></td></tr>
+      <tr><td class="ckcell"><input type="checkbox" id="ck-pre-2"></td>
+        <td>XES DB <code>XYStage/Info/DownloadEmergencyProgram</code> = 1
+          <span class="memo">1 이면 PMAC Script 다운로드 시 Emergency.plc 가 자동 적용되어 별도 수동 다운로드가 필요하지 않습니다.</span></td>
+        <td class="ref"><a href="#p4727">#4727</a></td></tr>
+      <tr><td class="ckcell"><input type="checkbox" id="ck-pre-3"></td>
+        <td>XES DB <code>XYStage/LiftPin/bUse</code> · <code>XYStage/Info/bUseLiftPinUnit</code> 설정값
+          <span class="memo">Lift Pin 사용 설비인 경우 Initialize 동작이 바뀝니다.</span></td>
+        <td class="ref"><a href="#p4141">#4141</a></td></tr>
+
+      <tr><td class="ckcell"><input type="checkbox" id="ck-post-1"></td>
+        <td><code>C:\Park Systems\XEService\Bin\Emergency.plc</code> 생성 확인</td>
+        <td class="ref"><a href="#p4727">#4727</a></td></tr>
+      <tr><td class="ckcell"><input type="checkbox" id="ck-post-2"></td>
+        <td>XES DB <code>XYStage/ServoOnSettlingTimeMiliSec</code> 확인 (기본 <code>6000</code>)
+          <span class="memo">Servo On 이후 Air Bearing 안정화 대기 시간(ms) 이며, PMAC 에는 <code>P110</code> 에 초 단위로 전달됩니다.</span>
+          <span class="memo">대기가 부족하면 Move 시작 시점이 빨라져 Following Error 가 발생할 수 있습니다.</span></td>
+        <td class="ref"><a href="#p4952">#4952</a></td></tr>
+      <tr><td class="ckcell"><input type="checkbox" id="ck-post-3"></td>
+        <td>Setup View / Manual Load-Unload Button 표시 옵션 (필요 시)</td>
+        <td class="ref"><a href="#p4687">#4687</a></td></tr>
+    </table>
+  </section>
+
+  <div class="filter">
+    <button class="on" data-f="all">전체</button>
+    <button data-f="req">요청건</button>
+    <button data-f="v1">현장 확인 필요</button>
+    <button data-f="v2">파크 검증 완료</button>
+    <button data-f="v3">해당 없음</button>
+    <span class="prog"><b id="cd">0</b> / <span id="ca">0</span> 확인 · <button class="rst" id="rst">초기화</button></span>
+  </div>
+
+  <section>
+    <h2 class="s" id="s4"><span class="n">3</span>적용 내역 및 검증</h2>
+
+    <h3 class="grp" data-g="g1">CIM</h3>
+
+    <div class="item" id="p4900" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4900">PMS #4900</a>
+        Shutter Door 상태 전달
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Shutter Door 동작 중에도 Door Open 신호가 전달되어 개방 완료 전 반송 진행 가능</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Door 상태를 Open / Closed / 동작 중으로 구분하여 Contact Point 전달</li>
+        <li>동작 중이거나 판별되지 않는 상태에서는 Open, Closed 모두 전달하지 않도록 변경</li>
+        <li>Contact Point 초기 설정 경로에도 동일 기준 적용</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Shutter Door Open / Close 시점의 신호 전달은 로그로만 확인됩니다.</dd>
+          <dt>확인 방법</dt><dd>Glass Load / Unload 수행 후 로그 반출<br>Shutter Door 개방 완료 이후 신호 전달 여부 확인</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4900-1"><span>Glass Load / Unload 수행</span></label>
+          <label><input type="checkbox" id="ck-4900-2"><span>해당 시점 로그 반출</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4552" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4552">PMS #4552</a>
+        재연결 시 Control State 변경
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        측정 중 Control State 가 Remote 에서 Offline 으로 변경됨</div>
+      <div class="imp">개선</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>재연결 시 Control State 를 CIM 에 조회하지 않고 XEA 의 현재 값을 CIM 으로 전달하도록 변경</li>
+        <li>Process State, Equip State 와 동일하게 XEA 를 상태의 주체로 통일</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>재연결은 통신 단절을 만들어야 재현되므로 현장 재현을 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>타 설비 현장 로그에서 Link Watchdog 이 Dead Connection 을 감지한 구간을 대상으로,
+            재연결 이후 Control State 가 유지되는 것을 확인했습니다.</dd>
+          <dt>참고</dt><dd>Control State 가 임의로 Offline 으로 바뀌는 현상이 재발하면 해당 시점 로그를 반출해 주시기 바랍니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="item" id="p4931" data-req="0" data-v="v3">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4931">PMS #4931</a>
+        측정 Data 의 Lot ID / Sample ID 구분
+        <span class="chip site">공통 반영</span><span class="chip v3">P9 해당 없음</span></h4>
+      <div class="phen"><b>현상</b><br>
+        측정 Data 저장 경로와 Job View 의 Lot ID 가 Sample ID 와 동일한 값으로 표시됨</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Job 생성 화면에 Sample ID 입력 항목 추가 (Lot ID 아래 배치, 기본값 자동 생성)</li>
+        <li>Job View 의 Job Table 에 Sample ID 컬럼 추가</li>
+        <li>Substrate 정보가 없는 Job 은 Lot ID 를 Sample ID 로 표시</li>
+      </ul>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Process Start Command 의 Lot ID Parameter 를 XEA 로 전달하도록 변경</li>
+        <li>미수신 시에는 기존과 동일하게 Substrate ID 전달</li>
+        <li>적용 여부를 XES DB 옵션(<code>SecsGem/Info/UseCimLotId</code>, 기본값 <code>0</code>)으로 분리</li>
+      </ul>
+      <div class="ver na">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd><b>P9 동작은 바뀌지 않습니다.</b> 검증이 필요하지 않습니다.</dd>
+          <dt>근거</dt><dd>Sample ID 입력 항목과 Job Table 컬럼은 <code>UseCimLotId</code> 옵션이 켜져 있을 때만 표시됩니다.
+            옵션 기본값이 <code>0</code> 이므로 Job 생성 화면과 Job Table 이 기존과 동일하게 유지되고,
+            Lot ID 도 기존과 동일하게 Substrate ID 로 전달됩니다.
+            Display SW 를 여러 설비가 공유하므로 설비별 적용 여부를 옵션으로 분리했습니다.</dd>
+          <dt>참고</dt><dd>이 기능은 CIM 이 Process Start Command 에 Lot ID Parameter 를 전달해야 동작합니다.
+            P9 은 CIM 측 수정이 적용되지 않아 옵션을 켜도 구분되지 않으므로 <code>0</code> 을 유지해 주시기 바랍니다.
+            CIM 수정이 완료된 뒤 옵션 적용을 요청해 주시기 바랍니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g2">Feature Align</h3>
+
+    <div class="item" id="p4596" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4596">PMS #4596</a>
+        Scan Line 표시 추가
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Feature Align 실패 시 Approach 위치와 Scan 위치의 관계를 화면에서 확인할 수 없음</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Z Positioning, Image Scan 시 Scan Line 이미지 저장 (Positioning, Overlay)</li>
+        <li>Feature Align Fail 시 Step Panel 에 Coarse 대신 Fine 결과 이미지 표시</li>
+        <li>Fine Align 시 Scan Bound 호출 추가</li>
+        <li>Scan Line 을 그릴 때 Offset ADC 반영</li>
+      </ul>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Vision OCX 에 Scan Line 그리기 인터페이스 추가</li>
+        <li>DSP Offset ADC, Micrometer per ADC Property 추가</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>화면 표시 항목이므로 현장에서 직접 확인할 수 있습니다.</dd>
+          <dt>확인 방법</dt><dd>Feature Align 수행 후 Step Panel 이미지에 Scan Line 표시 확인</dd>
+          <dt>참고</dt><dd>Overlay 이미지의 Box 와 Cross Mark 색상이 Scan Line 설정 색과 그 보색으로 변경됩니다.
+            기존과 색이 달라 보이는 것은 정상입니다.<br>
+            현장에서 확인되지 않은 경우 해당 시점 로그를 반출해 주시기 바랍니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4596-1"><span>Feature Align 수행 후 Scan Line 표시 확인</span></label>
+          <label><input type="checkbox" id="ck-4596-2"><span>미확인 시 해당 시점 로그 반출</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4596m" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4596">PMS #4596</a>
+        Fine Align 결과 표시 정정
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Pattern 이 선택되지 않은 경우에도 Cross Mark 가 표시되어 정합된 것으로 보임</div>
+      <div class="imp">개선</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Best, Nearest, Tracking Pattern 미선택 시 Cross Mark 미표시</li>
+        <li>Fine Align Pattern Match 결과 Draw 개선</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>표시 정정 항목이며 타 설비에서 검증이 완료되어 별도 확인을 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>타 설비 현장검증 완료. Pattern 미선택 상태에서 Cross Mark 가 표시되지 않는 것을 확인했습니다.</dd>
+          <dt>참고</dt><dd>Pattern Match Log 는 기존과 동일하게 기록됩니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g3">Tip Check</h3>
+
+    <div class="item" id="p4770" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4770">PMS #4770</a>
+        Manual Tip Check 저장 경로 및 재실행
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        같은 Tip 으로 Manual Tip Check 반복 실행 시 Job ID 를 매번 변경해야 실행 가능<br>
+        결과 Folder 에 X / Y 구분 없음<br>
+        결과 Data 와 Debug Data 가 서로 다른 위치에 저장됨</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Tip Characterizer 결과와 Debug Data 를 Manual Measurement 경로 하위로 통합
+          (<code>{Manual Measurement}\TipCharacterizer\{TipId}\{JobId}\{X|Y}</code>)</li>
+        <li>Tip Exchanger 실행 경로를 <code>{Manual Measurement}\TipExchanger\{JobId}</code> 로 변경</li>
+        <li>Tip Positioning, Tip Qualification 저장 경로를 동일 기준으로 이동</li>
+        <li>Job ID 중복 시 <code>(index)</code> 를 붙여 Folder 자동 생성</li>
+        <li>Tip Qualification 실행 시 Method 미선택이면 경고 표시 후 실행되지 않도록 변경</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>실행 결과가 화면과 Folder 로 확인되므로 현장에서 직접 확인할 수 있습니다.</dd>
+          <dt>확인 방법</dt><dd>같은 Job ID 로 Manual Tip Check 재실행 후 Folder 자동 생성 확인</dd>
+          <dt>참고</dt><dd>저장 위치가 변경되므로 기존 경로에 있던 결과는 그대로 남습니다.
+            신규 결과만 Manual Measurement 경로 하위에 생성됩니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4770-1"><span>같은 Job ID 로 재실행 후 Folder 자동 생성 확인</span></label>
+          <label><input type="checkbox" id="ck-4770-2"><span>결과 Folder 의 X / Y 구분 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g4">PMAC</h3>
+
+    <div class="item" id="p4727" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4727">PMS #4727</a>
+        <a class="pms" href="https://pms.parksystems.com/issues/4760">#4760</a>
+        <a class="pms" href="https://pms.parksystems.com/issues/4827">#4827</a>
+        PMAC 로그 보강 및 Emergency.plc 개선
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        XY Stage Timeout 및 Amplifier Fault 발생 시 원인 구분에 필요한 정보가 로그에 남지 않음<br>
+        On axis 와 Off axis 전환 구간에서 Servo 이상 발생</div>
+      <div class="imp">개선 / 기능</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Emergency.plc 가 현재 사용하는 X축만 보고 Servo 및 Air 를 차단하도록 변경</li>
+        <li>Emergency.plc Error 그룹 정리</li>
+        <li>Stop Kernel 호출 시 유효성 가드 추가</li>
+      </ul>
+      <div class="subimp">로그 보강</div>
+      <ul>
+        <li>PMAC 로그에 Amp Fault, I2t Fault 기록 추가</li>
+        <li>Servo 및 Homing 관련 로그 보강</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Emergency.plc 적용 여부는 파일 생성으로 확인할 수 있습니다.
+            동작 자체는 재현을 요청하지 않습니다.</dd>
+          <dt>확인 방법</dt><dd>SW 업데이트 후 <code>C:\Park Systems\XEService\Bin\Emergency.plc</code> 생성 확인<br>
+            XES DB <code>XYStage/Info/DownloadEmergencyProgram</code> 값 확인</dd>
+          <dt>참고</dt><dd>값이 <code>1</code> 이면 PMAC Script 다운로드 시 Emergency.plc 가 자동 적용됩니다.
+            이상 발생 시 확인할 PMAC 변수는 <a href="#s6">5. 이상 발생 시 확인</a> 표를 참고해 주시기 바랍니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4727-1"><span><code>Emergency.plc</code> 생성 확인</span></label>
+          <label><input type="checkbox" id="ck-4727-2"><span>XES DB <code>DownloadEmergencyProgram</code> 값 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4141" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4141">PMS #4141</a>
+        Lift Pin 원점 복귀 순서
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Initialize 시 Lift Pin 이 원점 복귀하는 구간에서 Gantry 와 충돌 가능</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Initialize 시 Lift Pin 원점 복귀 전 Loading Position 으로 이동하는 동작 추가</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Lift Pin 사용 여부가 DB 설정에 따라 갈리므로 설정값을 먼저 확인해 주시기 바랍니다.
+            Lift Pin 미사용 설비이면 동작 변화가 없습니다.</dd>
+          <dt>확인 방법</dt><dd>XES DB <code>XYStage/LiftPin/bUse</code> · <code>XYStage/Info/bUseLiftPinUnit</code> 설정값 확인<br>
+            Lift Pin 사용 설비인 경우 Initialize 수행 후 Loading Position 이동 여부 확인</dd>
+          <dt>참고</dt><dd>XES 측 Lift Pin Module Initialize 조건은 2026-07-10 전달분(XEService Dev1784)에 이미 반영되어 있습니다.
+            이번 업데이트는 XEA 의 원점 복귀 순서만 변경합니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4141-1"><span>XES DB Lift Pin 설정값 2종 확인</span></label>
+          <label><input type="checkbox" id="ck-4141-2"><span>Lift Pin 사용 설비인 경우 Initialize 동작 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4952" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4952">PMS #4952</a>
+        측정 후 다음 포인트 이동 시 Fatal Following Error
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        측정 완료 후 다음 포인트 이동 구간에서 XY Stage Fatal Following Error 간헐 발생</div>
+      <div class="hist"><b>경위</b><br>
+        Air Up 완료 판정이 압력 센서 확인 기준이라 Air 부상이 끝나기 전에 Servo On 완료로 전달되고 있었습니다.
+        그 결과 부상 완료 이전에 Move 가속이 시작되는 것으로 확인되어, Servo On 이후 Settling Time 을 별도로 적용했습니다.</div>
+      <div class="imp">개선</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Servo On 완료 이후 Air 부상을 위한 Settling Time 대기 추가 (Stage On 성공 조건에서만 적용)</li>
+        <li>Settling Time 을 XES DB 항목 <code>ServoOnSettlingTimeMiliSec</code> 로 설정 (기본값 <code>6000</code>ms)</li>
+        <li>Command 동기 경로에서 Job 실패를 결과값으로 반환하도록 변경</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>재현 조건은 확인되어 있습니다. Settling Time 을 0 으로 두면 재현됩니다.
+            설비에 부담이 되는 조건이므로 재현을 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>타 설비 현장 로그 분석으로 Servo On 완료 <b>69ms</b> 만에 Move 가 발행되던 것을 확인했습니다.
+            타 설비에서 확인된 값이므로 P9 에서 별도 계측을 요청하지 않습니다.</dd>
+          <dt>확인 방법</dt><dd>설정값 조회로 확인. 동작 시점 관측 불필요<br>
+            XES DB <code>ServoOnSettlingTimeMiliSec</code> (기본값 <code>6000</code>)<br>
+            PMAC <code>P110</code> Up Air Bearing Settling Delay (초)</dd>
+          <dt>참고</dt><dd>대기 중 진행 코드는 <code>P9004 = 522</code> 이며, 대기 구간에서만 잠시 표시됩니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4952-1"><span>XES DB <code>ServoOnSettlingTimeMiliSec</code> 설정값 확인</span></label>
+          <label><input type="checkbox" id="ck-4952-2"><span>PMAC <code>P110</code> 값 확인</span></label>
+          <div class="note">Servo On 1회당 설정된 Settling Time 만큼 Job 시간이 증가합니다.
+            증가량은 설정값에 따라 달라지며, 기본값 기준 약 6초입니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p3807" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/3807">PMS #3807</a>
+        <a class="pms" href="https://pms.parksystems.com/issues/4881">#4881</a>
+        Execution Timeout 원인 구분 및 이후 처리
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Motor 축 SOL 이상 동작 시 원인 구분 불가<br>
+        XY Stage Execution Timeout 이후 다음 동작이 Alarm 없이 응답없음 상태로 유지됨 (XEA 재시작으로만 복구)</div>
+      <div class="imp">개선 / 기능</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Execution Timeout 발생 시 Sol Control 상태와 Pressure Sensor 상태를 비교하여
+          불일치 축 정보와 함께 Air Pressure Alarm(<code>20144</code>) 발생</li>
+        <li>Job Polling 에 Stopping 종료 처리 추가 (Stop 완료 확인 또는 유예 시간 초과 시 Job 실패 종료)</li>
+        <li>Stopping 상태에서는 동작별 완료 판정을 수행하지 않도록 변경</li>
+        <li>PMAC 내부 Job 거부 시 즉시 실패 종료 및 신규 Alarm(<code>20158</code>) 발생</li>
+        <li>Command 진입 시 이전 Command 미완료 확인 시 Alarm(<code>20105</code>) 발생</li>
+      </ul>
+      <div class="subimp">로그 보강</div>
+      <ul>
+        <li>Status Polling 에 Stage Sol Control 및 Clamp Relay 신호 추가</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Execution Timeout 을 현장에서 재현하도록 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>2026-08-05 타 설비 현장 검증에서 XY Stage 축별 Air Pressure Alarm 발생을 확인했습니다.
+            Timeout 이후 처리는 2026-08-13 에 검증을 완료했습니다.</dd>
+          <dt>참고</dt><dd>Clamp 는 다른 사유로 검증하지 못해 별도 일감으로 진행 중입니다.
+            신규 Alarm 3종은 <a href="#s5">4. 신규 Alarm</a> 표를 참고해 주시기 바랍니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="item" id="p4846" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4846">PMS #4846</a>
+        Clamp Open / Close Time 증가
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Clamp Open / Close 동작 완료 감지와 Servo On 확인이 지연됨</div>
+      <div class="imp">개선</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Motor 모니터링 로그 조회를 일괄 조회로 병합 (Polling 사이클당 9회에서 최대 4회)</li>
+        <li>PMAC 응답 수신 성공 시 불필요한 대기 제거 (재시도 시에만 대기)</li>
+        <li>일괄 조회 응답 수신을 위한 Reply Buffer 확장</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>동작 시간 단축은 로그로 확인되는 항목이라 현장 계측을 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>2026-08-06 타 설비 현장검증 완료.</dd>
+          <dt>참고</dt><dd>Clamp 동작 시간이 짧아지므로 기존보다 빠르게 완료되는 것은 정상입니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g5">PLC</h3>
+
+    <div class="item" id="p4842" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4842">PMS #4842</a>
+        Ionizer 알람 발생 조건 및 FDC Upload
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Shutter Door Open 으로 Ionizer Controller 전원이 차단되는 구간에 통신이상 알람 발생<br>
+        FDC 항목 중 일부 Head Runtime 미보고<br>
+        Number of Heads 를 4 미만으로 설정 시 Head 간 데이터가 한 칸씩 밀림</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Ionizer FDC VID 매핑을 고정 4채널에서 XES 응답 Head 수 기준으로 변경</li>
+        <li>Head Runtime, Run State, State, Over Time VID 인덱스를 실연결 Head 수 기준으로 연속 배치</li>
+        <li>Shutter Door Open 시 Ionizer 전원 Off 알람(<code>40044</code>) 차단</li>
+        <li>Ionizer 통신이상 알람(<code>140005</code>)을 Controller 전원 On 상태에서만 발생하도록 변경</li>
+      </ul>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>Number of Heads 설정 범위를 1 에서 4 로 제한하고 Head 데이터 파싱 개선</li>
+        <li>수신 패킷 검증 강화 (체크섬 범위 고정, 손상 페이로드 폐기, 패킷 길이 검증)</li>
+        <li>Head 상태 3회 연속 동일 판정 시에만 반영</li>
+        <li>Head 미연결 알람을 매 Polling 반복 발생에서 상태 변화 시 1회 발생으로 변경</li>
+        <li>Head Alarm 수신 값 보존 (Over Current, Communication Out 이 Head Fail 로 병합되던 현상 개선)</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Head 수 설정이 실제와 일치해야 하므로 설정값 확인이 필요합니다.</dd>
+          <dt>확인 방법</dt><dd>XES DB Ionizer <code>NumberOfHeads</code> 값이 실제 연결 Head 수와 일치하는지 확인<br>
+            XEA Ionizer 화면의 Head 수 표시 확인</dd>
+          <dt>참고</dt><dd>Ionizer 미사용 설비이면 확인이 필요하지 않습니다.
+            신규 Alarm <code>140005</code> 는 <a href="#s5">4. 신규 Alarm</a> 표를 참고해 주시기 바랍니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4842-1"><span>XES DB <code>NumberOfHeads</code> 값 확인</span></label>
+          <label><input type="checkbox" id="ck-4842-2"><span>XEA Ionizer 화면 Head 수 표시 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4071" data-req="0" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4071">PMS #4071</a>
+        Shutter Open 전 Ionizer Off
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        방사선 Qual 지적 사항으로 Shutter Open 상태에서는 Ionizer 가 Off 되어야 함</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Front Door Control 에서 Shutter Open 전 Ionizer Off 추가</li>
+        <li>반송 요청 경로의 Ionizer Off 는 해당 설비에서만 동작하도록 옵션 처리</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>Ionizer 상태가 화면으로 보이므로 현장에서 직접 확인할 수 있습니다.</dd>
+          <dt>확인 방법</dt><dd>Front Door 를 Open 한 뒤 XEA Ionizer 화면에서 Off 상태 확인</dd>
+          <dt>참고</dt><dd>P9 은 LGD 계열 설비이므로 이 동작이 적용됩니다.
+            현장에서 확인되지 않은 경우 해당 시점 로그를 반출해 주시기 바랍니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4071-1"><span>Front Door Open 후 Ionizer Off 확인</span></label>
+          <label><input type="checkbox" id="ck-4071-2"><span>미확인 시 해당 시점 로그 반출</span></label>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g6">측정 / 분석</h3>
+
+    <div class="item" id="p4941" data-req="1" data-v="v1">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4941">PMS #4941</a>
+        Vertex 분석 결과 소수점 자리수
+        <span class="chip req">요청건</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Vertex 분석 결과의 측정값과 화면 표기가 소수점 1자리로 표시됨<br>
+        단위 변환 시 변환 후 값의 유효자리가 줄어듦</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Vertex 측정값 반올림 자리수를 Unit Format 기본값(소수점 3자리)으로 변경</li>
+        <li>Vertex 분석 결과 화면 표기를 Universal Line 과 동일한 소수점 3자리로 변경</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>화면 표기 항목이므로 현장에서 직접 확인할 수 있습니다.</dd>
+          <dt>확인 방법</dt><dd>Vertex 분석 수행 후 결과 화면의 Width, Height, Angle 이 소수점 3자리로 표시되는지 확인</dd>
+          <dt>참고</dt><dd>Analysis Modification 으로 단위를 변환한 경우에도 유효자리가 유지됩니다.
+            현장에서 확인되지 않은 경우 해당 시점 로그를 반출해 주시기 바랍니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-4941-1"><span>Vertex 분석 결과 소수점 3자리 표시 확인</span></label>
+          <label><input type="checkbox" id="ck-4941-2"><span>단위 변환 후 유효자리 유지 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g7">UI / 편의</h3>
+
+    <div class="item" id="p4687" data-req="0" data-v="v3">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4687">PMS #4687</a>
+        Manual Load / Unload 버튼 표시 옵션
+        <span class="chip site">공통 반영</span><span class="chip v3">P9 해당 없음</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Standalone 설비에서 Job View 의 Manual Load / Unload 버튼 표시 옵션 사용 불가</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Setup View 의 Manual Load / Unload 표시 옵션 조건에 Standalone EFEM 지원 여부 추가</li>
+        <li>Job View 버튼 표시 판정을 동일 조건으로 변경</li>
+      </ul>
+      <div class="ver na">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd><b>P9 동작은 바뀌지 않습니다.</b> 검증이 필요하지 않습니다.</dd>
+          <dt>근거</dt><dd>이번 변경은 표시 조건을 Standalone 설비까지 넓힌 것입니다.
+            EFEM 이 활성화된 설비는 기존에도 Setup View 에서 옵션을 사용할 수 있어 동작이 그대로 유지됩니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3 class="grp" data-g="g8">안정화 / 성능</h3>
+
+    <div class="item" id="pjobresult" data-req="0" data-v="v1">
+      <h4>Job Result DB Loading 지연 및 Export 개선
+        <span class="chip site">공통 반영</span><span class="chip v1">현장 확인</span></h4>
+      <div class="phen"><b>현상</b><br>
+        측정 이력이 누적될수록 XEA 실행 시 Loading Result 단계에서 지연 발생<br>
+        Export 시 Recipe 필터 미반영, Page Range 계산 오류, 이미지 일부 누락</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>결과 목록 조회 방식 개선 (순번 계산용 서브쿼리 제거, ID 범위 조회로 변경)</li>
+        <li>Recipe 필터 목록 수집을 전체 페이지 반복 조회에서 1회 조회로 변경</li>
+        <li>DB 정리 동작을 미사용 영역이 일정 비율 이상일 때만 수행하도록 변경</li>
+        <li>Export 의 Recipe 필터 반영 및 Page Range 계산 개선</li>
+        <li>측정 이미지 수집 누락 개선 (Export 및 자동 백업 시 이미지 일부 사라지던 현상)</li>
+        <li>재Export 시 결과 중복 기록 개선</li>
+      </ul>
+      <div class="ver">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>실행 시 화면으로 확인되므로 현장에서 직접 확인할 수 있습니다.</dd>
+          <dt>확인 방법</dt><dd>XEA 실행 후 Loading Result 단계 지연 여부 확인<br>
+            Job Result 화면에서 Export 수행 후 선택 구간과 이미지 포함 여부 확인</dd>
+          <dt>참고</dt><dd>Export 옵션별 대상이 정리되었습니다.
+            Page Range, Date Range, Current Page 는 Recipe 필터를 반영하고,
+            Entire Pages, Result Range 는 전체 이력을 대상으로 합니다.</dd>
+        </dl>
+        <div class="ck">
+          <label><input type="checkbox" id="ck-jobresult-1"><span>XEA 실행 시 Loading Result 지연 여부 확인</span></label>
+          <label><input type="checkbox" id="ck-jobresult-2"><span>Export 결과의 선택 구간과 이미지 포함 확인</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="p4666" data-req="0" data-v="v2">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4666">PMS #4666</a>
+        XEService 비정상 종료
+        <span class="chip site">공통 반영</span><span class="chip v2">파크 검증 완료</span></h4>
+      <div class="phen"><b>현상</b><br>
+        XEService 가 간헐적으로 비정상 종료됨</div>
+      <div class="imp">개선</div>
+      <div class="grpx xes">XEService</div>
+      <ul>
+        <li>DSP Board Data 수신 시 누적 데이터가 허용 크기를 초과하면 해당 패킷 폐기</li>
+      </ul>
+      <div class="ver parked">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd>간헐적으로 발생하는 현상이라 현장 재현을 요청하지 않습니다.</dd>
+          <dt>파크 검증</dt><dd>Dump 분석과 Page Heap 적용 모니터링으로 원인을 DSP 수신 데이터 이상으로 확인했습니다.</dd>
+          <dt>참고</dt><dd>XEService 비정상 종료가 재발하면 해당 시점 로그와 Dump 를 반출해 주시기 바랍니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="item" id="p4866" data-req="0" data-v="v3">
+      <h4><a class="pms" href="https://pms.parksystems.com/issues/4866">PMS #4866</a>
+        미사용 Head Camera Live Off
+        <span class="chip site">공통 반영</span><span class="chip v3">P9 해당 없음</span></h4>
+      <div class="phen"><b>현상</b><br>
+        Dual Head 설비에서 선택되지 않은 Head 의 Camera 전송이 유지되어 Network 부하 발생</div>
+      <div class="imp">개선</div>
+      <div class="grpx xea">XEA</div>
+      <ul>
+        <li>Unit 전환 및 실행 시 비선택 Head 의 Camera Live 를 Off 로 전환</li>
+      </ul>
+      <div class="subimp">로그 보강</div>
+      <ul>
+        <li>Camera FPS 감시 로그를 XEA CSV 에서 XEService 로그로 이관</li>
+        <li>Live Off 상태에서 FPS 표시가 이전 값으로 남던 현상 개선</li>
+      </ul>
+      <div class="ver na">
+        <div class="vh">검증</div>
+        <dl>
+          <dt>판단</dt><dd><b>P9 동작은 바뀌지 않습니다.</b> 검증이 필요하지 않습니다.</dd>
+          <dt>근거</dt><dd>P9 은 Single Head 구성이라 비선택 Head 가 없습니다.
+            Camera 전송 제어는 Dual Head 설비에서만 동작합니다.</dd>
+          <dt>참고</dt><dd>Camera FPS 감시 로그 위치가 XEA CSV 에서 XEService 로그로 바뀌는 변화는 P9 에도 적용됩니다.</dd>
+        </dl>
+      </div>
+    </div>
+
+  </section>
+
+  <section>
+    <h2 class="s" id="s5"><span class="n">4</span>신규 Alarm</h2>
+    <table>
+      <tr><th class="c" style="width:100px">Alarm ID</th><th>Text</th><th class="c" style="width:80px">출처</th></tr>
+      <tr><td class="c"><span class="pill">20105</span></td>
+        <td><code>[XYStage] : Another Command is processing</code></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/4881">#4881</a></td></tr>
+      <tr><td class="c"><span class="pill">20144</span></td>
+        <td><code>[XYStage] : Air Pressure is abnormal.</code>
+          <span class="memo">불일치 축 / Clamp 정보 포함</span></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/3807">#3807</a></td></tr>
+      <tr><td class="c"><span class="pill">20158</span></td>
+        <td><code>[XYStage] : Job Precondition Not Satisfied</code></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/4881">#4881</a></td></tr>
+      <tr><td class="c"><span class="pill">140005</span></td>
+        <td><code>[Ionizer] : Controller Communication Timeout</code></td>
+        <td class="c"><a class="pms" href="https://pms.parksystems.com/issues/4842">#4842</a></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="s" id="s6"><span class="n">5</span>이상 발생 시 확인 (PMAC 변수)</h2>
+    <table>
+      <tr><th style="width:110px">구분</th><th style="width:230px">변수</th><th>의미</th></tr>
+      <tr><td rowspan="4">진행 상태</td><td><code>P4000</code></td><td>Stage Job 완료 플래그 (0 진행 중 / 1 완료)</td></tr>
+      <tr><td><code>P9000</code></td><td>진행 코드. 앞 두 자리가 실행 중인 PLC 번호</td></tr>
+      <tr><td><code>P9004</code></td><td>Servo Manager 세부 단계 (5xx Air Up / 4xx Air Down, <code>522</code> Settling 대기)</td></tr>
+      <tr><td><code>P9033</code></td><td>Emergency PLC 진행 코드</td></tr>
+      <tr><td rowspan="4">이상 래치</td><td><code>P2054</code></td><td>EMO 처리 상태. 1 이면 EMO 이후 복구되지 않은 상태</td></tr>
+      <tr><td><code>P5997</code></td><td>Stage 이상 래치 (FeFatal / AmpFault / I2tFault)</td></tr>
+      <tr><td><code>P5998</code></td><td>Lift Pin 이상 래치</td></tr>
+      <tr><td><code>P5999</code></td><td>Clamp 이상 래치</td></tr>
+      <tr><td rowspan="4">Servo · Air</td><td><code>P2012</code></td><td>Servo On / Off 지령 플래그</td></tr>
+      <tr><td><code>P110</code></td><td>Air Bearing Settling Delay (초)</td></tr>
+      <tr><td><code>M7500 M7502 M7505 M7507 M7510 M7512</code></td><td>Air Up 솔레노이드 출력. 전부 0 이면 Air Off</td></tr>
+      <tr><td><code>M7005 M7006</code></td><td>압력 센서 입력</td></tr>
+      <tr><td rowspan="3">모터</td><td><code>Motor[N].AmpEna</code></td><td>앰프 활성 여부</td></tr>
+      <tr><td><code>Motor[N].FeFatal / AmpFault / I2tFault</code></td><td>이상 종류 판별</td></tr>
+      <tr><td><code>Motor[N].ActPos / DesPos</code></td><td>지령과 실제 위치 차이</td></tr>
+    </table>
+    <div class="note">확인 표시는 이 파일에 저장되지 않습니다. 브라우저에만 남으므로 메일로 전달해도 따라가지 않습니다.</div>
+  </section>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var KEY='swrel-report:LGD_P9:2026-09-03';
+  var store=null;
+  try{ localStorage.setItem('__p','1'); localStorage.removeItem('__p'); store=localStorage; }catch(e){ store=null; }
+
+  var items=[].slice.call(document.querySelectorAll('.item'));
+  var boxes=[].slice.call(document.querySelectorAll('.ck input[type=checkbox]'));
+  var cd=document.getElementById('cd'), ca=document.getElementById('ca');
+  var saved={};
+  if(store){ try{ saved=JSON.parse(store.getItem(KEY)||'{}')||{}; }catch(e){ saved={}; } }
+
+  function paint(){
+    var n=0; boxes.forEach(function(b){ if(b.checked) n++; });
+    cd.textContent=n; ca.textContent=boxes.length;
+  }
+  function save(){
+    if(!store) return;
+    var o={}; boxes.forEach(function(b){ if(b.checked) o[b.id]=1; });
+    try{ store.setItem(KEY, JSON.stringify(o)); }catch(e){}
+  }
+  boxes.forEach(function(b){
+    if(saved[b.id]) b.checked=true;
+    b.addEventListener('change', function(){ paint(); save(); });
+  });
+  paint();
+
+  document.getElementById('rst').addEventListener('click', function(){
+    if(!confirm('확인 표시를 모두 지웁니다. 계속하시겠습니까?')) return;
+    boxes.forEach(function(b){ b.checked=false; }); paint(); save();
+  });
+
+  var tocLinks=[].slice.call(document.querySelectorAll('nav.toc a.sub'));
+  var tocGrps=[].slice.call(document.querySelectorAll('nav.toc .tocgrp'));
+  var secGrps=[].slice.call(document.querySelectorAll('h3.grp'));
+
+  function match(el, f){
+    return (f==='all') || (f==='req' ? el.getAttribute('data-req')==='1'
+                                     : el.getAttribute('data-v')===f);
+  }
+  function apply(f){
+    items.forEach(function(it){ it.classList.toggle('hide', !match(it, f)); });
+    tocLinks.forEach(function(a){ a.classList.toggle('hide', !match(a, f)); });
+
+    secGrps.forEach(function(h){
+      var any=false, el=h.nextElementSibling;
+      while(el && el.classList.contains('item')){
+        if(!el.classList.contains('hide')) any=true;
+        el=el.nextElementSibling;
+      }
+      h.style.display = any ? '' : 'none';
+    });
+    tocGrps.forEach(function(g){
+      var key=g.getAttribute('data-g');
+      var any=tocLinks.some(function(a){
+        return a.getAttribute('data-g')===key && !a.classList.contains('hide');
+      });
+      g.classList.toggle('hide', !any);
+    });
+  }
+
+  // 현재 보고 있는 항목을 목차에 표시
+  var spy=[];
+  [].slice.call(document.querySelectorAll('h2.s[id], .item[id]')).forEach(function(el){
+    var a=document.querySelector('nav.toc a[href="#'+el.id+'"]');
+    if(a) spy.push({el:el, a:a});
+  });
+  var pending=false;
+  function updateSpy(){
+    pending=false;
+    var cur=null;
+    for(var i=0;i<spy.length;i++){
+      var it=spy[i];
+      if(it.el.offsetParent===null) continue;
+      if(it.el.getBoundingClientRect().top<=120) cur=it; else break;
+    }
+    spy.forEach(function(it){ it.a.classList.toggle('active', it===cur); });
+    if(cur){
+      var r=cur.a.getBoundingClientRect(), n=document.querySelector('nav.toc');
+      if(n){
+        var nr=n.getBoundingClientRect();
+        if(r.top<nr.top+8 || r.bottom>nr.bottom-8) cur.a.scrollIntoView({block:'nearest'});
+      }
+    }
+  }
+  window.addEventListener('scroll', function(){
+    if(!pending){ pending=true; requestAnimationFrame(updateSpy); }
+  }, {passive:true});
+  window.addEventListener('resize', updateSpy, {passive:true});
+
+  var btns=[].slice.call(document.querySelectorAll('.filter button[data-f]'));
+  btns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      btns.forEach(function(x){ x.classList.remove('on'); });
+      btn.classList.add('on');
+      apply(btn.getAttribute('data-f'));
+    });
+  });
+  apply('all');
+  updateSpy();
+})();
+</script>
+</body>
+</html>

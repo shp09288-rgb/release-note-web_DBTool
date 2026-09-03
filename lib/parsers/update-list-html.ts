@@ -42,6 +42,45 @@ function metaValue($: cheerio.CheerioAPI, label: string): string {
   return found;
 }
 
+/**
+ * 신 양식(Update Report)의 헤더 폴백.
+ *
+ * 구 양식은 .meta-grid 에 라벨별 칸이 있지만, 신 양식은 한 줄로 뭉쳐 있다:
+ *   <h1>LGD P9 SW Update 적용 내역 및 검증</h1>
+ *   <div class="sub">NX-TSH1518 · XEA Dev4027 → Dev4338 · XEService Dev1785 → Dev2037</div>
+ *
+ * '·' 로 끊어 라벨이 붙은 조각을 찾는다. 사이트는 h1 앞부분에서 가져온다.
+ */
+function headerFromTitleLine($: cheerio.CheerioAPI): {
+  site: string | null;
+  model: string | null;
+  xea: string;
+  xes: string;
+} {
+  const h1 = tidy($('header h1').first().text() || $('h1').first().text());
+  const sub = tidy($('header .sub').first().text() || $('.sub').first().text());
+
+  // 'LGD P9 SW Update 적용 내역 및 검증' -> 'LGD P9'
+  const siteMatch = h1.match(/^([A-Z]{2,4}\s?[A-Z]?\d{1,2})\b/);
+
+  const parts = sub.split(/\s*[·|]\s*/).map(tidy).filter(Boolean);
+  const labelled = (label: string) =>
+    parts.find((x) => x.toUpperCase().startsWith(label.toUpperCase())) ?? '';
+  const strip = (x: string, label: string) =>
+    tidy(x.slice(label.length));
+
+  const xeaPart = labelled('XEA');
+  const xesPart = labelled('XEService');
+
+  return {
+    site: siteMatch ? siteMatch[1] : null,
+    // 라벨이 붙지 않은 첫 조각을 모델로 본다 (NX-TSH1518).
+    model: parts.find((x) => !/^(XEA|XEService|XES|CIM)\b/i.test(x)) ?? null,
+    xea: xeaPart ? strip(xeaPart, 'XEA') : '',
+    xes: xesPart ? strip(xesPart, 'XEService') : '',
+  };
+}
+
 /** '#4552 CIM 불안정' 같은 헤딩에서 링크·배지를 뺀 순수 제목만 남긴다. */
 function headingTitle($: cheerio.CheerioAPI, heading: cheerio.Cheerio<any>): string {
   const clone = heading.clone();
@@ -70,7 +109,8 @@ function improvementsFrom(
 ): ParsedImprovement[] {
   const groups: ParsedImprovement[] = [];
 
-  item.find('.grp').each((_, el) => {
+  // 구 양식은 .grp, 신 양식은 .grpx 를 쓴다. 둘 다 받는다.
+  item.find('.grp, .grpx').each((_, el) => {
     const node = $(el);
     const classes = (node.attr('class') ?? '').split(/\s+/);
     const component = classes.includes('xea')
@@ -96,6 +136,28 @@ function improvementsFrom(
     if (lines.length) groups.push({ component, lines });
   });
 
+  // 신 양식의 검증 블록. 개선 내용은 아니지만 같은 항목에 속하므로 함께 보관해
+  // 본문 검색에 걸리게 한다. 원문은 raw_html 에 그대로 남는다.
+  const verify: string[] = [];
+  item.find('.ver').each((_, el) => {
+    const box = $(el);
+    box.find('dl').each((_, dl) => {
+      const rows = $(dl).children();
+      let label = '';
+      rows.each((_, node) => {
+        const tag = (node as { tagName?: string }).tagName?.toLowerCase();
+        const text = tidy($(node).text());
+        if (tag === 'dt') label = text;
+        else if (tag === 'dd' && text) verify.push(label ? `${label}: ${text}` : text);
+      });
+    });
+    box.find('.ck label').each((_, label) => {
+      const text = tidy($(label).text());
+      if (text) verify.push(`확인: ${text}`);
+    });
+  });
+  if (verify.length) groups.push({ component: 'verify', lines: verify });
+
   return groups;
 }
 
@@ -114,12 +176,17 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
   // --- 헤더 ---
   const equipmentCell = metaValue($, '설비');
+  const titleLine = equipmentCell ? null : headerFromTitleLine($);
+
   if (equipmentCell) {
     const [site, ...rest] = equipmentCell.split('/');
     header.site = tidy(site) || null;
     header.model = tidy(rest.join('/')) || null;
+  } else if (titleLine?.site || titleLine?.model) {
+    header.site = titleLine.site;
+    header.model = titleLine.model;
   } else {
-    warnings.push({ field: 'site', message: '헤더에서 설비 칸을 찾지 못했습니다.' });
+    warnings.push({ field: 'site', message: '헤더에서 설비 정보를 찾지 못했습니다.' });
   }
 
   // 문서에 EQ 번호가 없다. 구조적 한계이므로 항상 경고한다.
@@ -130,7 +197,7 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
   header.author = metaValue($, '작성') || null;
 
-  const xea = parseVersionRange(metaValue($, 'XEA'));
+  const xea = parseVersionRange(metaValue($, 'XEA') || titleLine?.xea || '');
   header.xeaFromRaw = xea.fromRaw;
   header.xeaFromBuild = xea.fromBuild;
   header.xeaToRaw = xea.toRaw;
@@ -138,7 +205,7 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
   xea.warnings.forEach((m) => warnings.push({ field: 'xea', message: m }));
 
   // 문서는 'XEService' 라고 쓰지만 우리 모델은 XES 로 부른다.
-  const xes = parseVersionRange(metaValue($, 'XEService'));
+  const xes = parseVersionRange(metaValue($, 'XEService') || titleLine?.xes || '');
   header.xesFromRaw = xes.fromRaw;
   header.xesFromBuild = xes.fromBuild;
   header.xesToRaw = xes.toRaw;
@@ -147,24 +214,35 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
   // --- 배지 범례 ---
   // 배지 의미를 코드에 박지 않는다. 문서가 섹션 0에서 스스로 정의한다.
-  $('#s0 .legend div').each((_, el) => {
+  // 구 양식은 #s0 안의 div 행, 신 양식은 nav.toc 안의 span 행이다.
+  // 표식도 .chip 이거나 .dot/.mine 이라 특정 클래스 이름에 기대지 않는다.
+  $('.legend').find('div, span').each((_, el) => {
     const row = $(el);
-    const chip = row.find('.chip').first();
-    const cls = (chip.attr('class') ?? '')
+    const marker = row.children('.chip, .dot, i, span[class]').first();
+    const cls = (marker.attr('class') ?? '')
       .split(/\s+/)
-      .filter((c) => c && c !== 'chip')[0];
+      .filter((c) => c && c !== 'chip' && c !== 'dot')[0];
     if (!cls) return;
     const clone = row.clone();
-    clone.find('.chip').remove();
-    legend[cls] = tidy(clone.text());
+    clone.children('.chip, .dot, i').remove();
+    const label = tidy(clone.text());
+    if (label && !legend[cls]) legend[cls] = label;
   });
 
   // --- 섹션과 항목 ---
   const items: ParsedItem[] = [];
 
-  $('section[id^="s"]').each((_, sectionEl) => {
+  // 구 양식은 <section id="s1">, 신 양식은 <section><h2 class="s" id="s1">.
+  // 둘 다 잡으려면 section 을 전부 훑고 그 안의 h2.s 로 판단해야 한다.
+  $('section').each((_, sectionEl) => {
     const section = $(sectionEl);
     const heading = section.find('h2.s').first();
+    if (!heading.length) return;
+
+    const hasSectionId = /^s\d+$/.test(section.attr('id') ?? '');
+    const hasHeadingId = /^s\d+$/.test(heading.attr('id') ?? '');
+    if (!hasSectionId && !hasHeadingId) return;
+
     const sectionNo = Number(tidy(heading.find('.n').first().text()));
 
     // 섹션 0은 표기 안내다. 항목이 아니다.
@@ -176,10 +254,14 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
     section.find('.item').each((_, itemEl) => {
       const item = $(itemEl);
+      // 구 양식은 <h3 class="s" id="p4552">, 신 양식은 <div class="item" id="p4900"><h4>.
       const h3 = item.find('h3.s').first();
+      const heading4 = h3.length ? h3 : item.find('h4').first();
 
-      const numbers = pmsNumbersFrom($, h3);
-      const anchorId = h3.attr('id') ?? `s${sectionNo}-${items.length}`;
+      const numbers = pmsNumbersFrom($, heading4);
+      // 앵커는 헤딩(구) 또는 항목 자체(신)에 붙는다.
+      const anchorId =
+        heading4.attr('id') ?? item.attr('id') ?? `s${sectionNo}-${items.length}`;
 
       const phenClone = item.find('.phen').first().clone();
       phenClone.find('b').remove();
@@ -187,25 +269,35 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
       const improvements = improvementsFrom($, item);
 
-      const rawFlags = h3
+      // 배지의 원시 클래스와, 그 배지가 스스로 달고 있는 라벨을 함께 모은다.
+      const chipInfo = heading4
         .find('.chip')
-        .map((_, chip) =>
-          (($(chip).attr('class') ?? '').split(/\s+/).filter((c) => c && c !== 'chip'))[0]
-        )
+        .map((_, chip) => {
+          const cls = (($(chip).attr('class') ?? '')
+            .split(/\s+/)
+            .filter((c) => c && c !== 'chip'))[0];
+          return cls ? { cls, text: tidy($(chip).text()) } : null;
+        })
         .get()
-        .filter(Boolean) as string[];
+        .filter(Boolean) as { cls: string; text: string }[];
 
-      // 원시 클래스는 그대로 두고, 의미는 문서의 범례에서 유도해 덧붙인다.
-      // 'prev' 라는 이름을 코드에 박으면 다음 문서가 다른 클래스를 쓸 때 깨진다.
+      const rawFlags = chipInfo.map((c) => c.cls);
+
+      // 의미는 문서가 정의한다 — 코드에 클래스 이름을 박지 않는다.
+      // 구 양식은 범례가 뜻을 갖고(<span class="chip a5">A5</span> + 범례),
+      // 신 양식은 배지가 스스로 뜻을 단다(<span class="chip req">요청건</span>).
+      // 신 양식 범례는 항목과 다른 클래스(mine vs req)를 쓰므로 범례만으로는 끊긴다.
+      const meaningOf = (c: { cls: string; text: string }) => legend[c.cls] || c.text;
+
       const flags = [...rawFlags];
-      if (rawFlags.some((f) => (legend[f] ?? '').includes('미적용'))) {
+      if (chipInfo.some((c) => meaningOf(c).includes('미적용'))) {
         flags.push('not_applied');
       }
-      if (rawFlags.some((f) => (legend[f] ?? '').includes('요청'))) {
+      if (chipInfo.some((c) => meaningOf(c).includes('요청'))) {
         flags.push('site_requested');
       }
 
-      const title = headingTitle($, h3);
+      const title = headingTitle($, heading4);
 
       items.push({
         pmsNo: numbers[0] ?? null,
@@ -254,6 +346,18 @@ export function parseUpdateListHtml(html: string): ParsedDocument {
 
     alarms.push({ alarmId, text, pmsNo: match ? Number(match[1]) : null });
   });
+
+  // 항목 마크업은 있는데 하나도 수집하지 못했다면 양식이 바뀐 것이다.
+  // 이 경고가 없으면 18건을 통째로 놓쳐도 화면에 아무 표시가 남지 않는다.
+  const itemMarkupCount = $('.item').length;
+  if (itemMarkupCount > 0 && items.length === 0) {
+    warnings.push({
+      field: 'items',
+      message:
+        `문서에 항목 마크업이 ${itemMarkupCount}개 있는데 하나도 읽지 못했습니다. ` +
+        '문서 양식이 바뀌었을 수 있습니다.',
+    });
+  }
 
   return { header, legend, items, alarms, warnings };
 }
