@@ -8,21 +8,20 @@ updated: 2026-09-03
 
 ## 현재 상태
 
-**구현 완료. PR 대기.** 브랜치 `feature/sw-version-history` 원격에 푸시됨 (`1b69473`).
-`origin/main` 위 커밋 38개.
+**운영 중.** `main` 배포 완료 — https://release-note-web-db-tool.vercel.app
 
 ```
 tsc     0 errors
-tests   88 passing (7 files)
-build   성공
+tests   101 passing (7 files)
 DB      배포 90 · 항목 8 · PMS 참조 145 · 캐시 73
 ```
 
-18개 태스크 전부 리뷰 승인. 최종 전체 브랜치 리뷰가 차단 6건(태스크 간 이음매)을
-찾아 일괄 수정했고 재리뷰에서 "Ready to merge" 판정.
+전환(PR #10) 이후 추가된 것:
+- Park Systems 브랜드 UI — 실제 홈페이지 색(#003a82 / #00aee6) · Pretendard · 공통 헤더
+- **문서 양식 2종 지원** — 유관부서가 틀을 바꿨다(`LGD_P9_Update_Report.html`).
+  선택자 폴백으로 신·구 모두 읽는다. 픽스처 둘 다 커밋돼 테스트가 지킨다
 
-PR 본문 초안: `.superpowers/sdd/2026-09-01-sw-version-history/PR-BODY.md`
-작업 기록 전문(판단 19건 · 이월 minor 21건): 같은 폴더의 `progress.md`
+Supabase 키는 새 방식(`sb_secret_`)으로 교체 완료. 레거시 JWT 키는 아직 살아 있다.
 
 ## 다음 할 일
 
