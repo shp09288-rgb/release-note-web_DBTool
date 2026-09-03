@@ -29,7 +29,7 @@ export default async function SiteTimelinePage({
 
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-10">
-      <Link href="/" className="text-sm text-slate-500 hover:underline">
+      <Link href="/" className="text-sm text-park-muted hover:underline">
         ← 설비 목록
       </Link>
 
@@ -37,7 +37,7 @@ export default async function SiteTimelinePage({
         <h1 className="text-2xl font-extrabold text-park-navy">
           {site} / {equipment}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-park-muted">
           배포 {deployments.length}건
           {gaps.length > 0 ? ` · 기록 누락 구간 ${gaps.length}곳` : ''}
         </p>

@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { SiteHeader } from "@/components/layout/site-header";
 
 export const metadata: Metadata = {
   title: "SW 버전 이력",
@@ -23,11 +13,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="ko" className="h-full antialiased">
+      <head>
+        {/*
+          Pretendard — parksystems.com 이 쓰는 서체. next/font 로 자체 호스팅하지 않고
+          CDN 을 쓰는 이유는, 막혔을 때 globals.css 의 폴백(맑은 고딕)으로 조용히
+          떨어지는 편이 낫기 때문이다. 배포 문서도 맑은 고딕을 쓴다.
+        */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-white">
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }

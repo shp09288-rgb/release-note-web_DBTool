@@ -39,7 +39,7 @@ export function SearchPanel() {
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="PMS 번호(4952) 또는 키워드(Fatal Following Error)"
-          className="flex-1 rounded-lg border border-park-border px-4 py-2.5 text-sm outline-none focus:border-park-navy"
+          className="flex-1 rounded-lg border border-park-border px-4 py-2.5 text-sm outline-none focus:border-park-accent"
         />
         <button
           type="submit"
@@ -54,7 +54,7 @@ export function SearchPanel() {
 
       {hits === null ? null : hits.length === 0 ? (
         error ? null : (
-          <p className="mt-8 text-center text-slate-500">결과가 없습니다.</p>
+          <p className="mt-8 text-center text-park-muted">결과가 없습니다.</p>
         )
       ) : (
         <ul className="mt-6 space-y-3">
@@ -70,8 +70,8 @@ export function SearchPanel() {
                 >
                   {hit.site} / {hit.equipment}
                 </Link>
-                <span className="text-slate-500">{hit.deployedOn ?? '날짜 미상'}</span>
-                <span className="font-mono text-slate-500">
+                <span className="text-park-muted">{hit.deployedOn ?? '날짜 미상'}</span>
+                <span className="font-mono text-park-muted">
                   XEA {hit.xeaToRaw || '-'} · XES {hit.xesToRaw || '-'}
                 </span>
                 {hit.notApplied ? (
@@ -80,15 +80,15 @@ export function SearchPanel() {
                   </span>
                 ) : null}
                 {hit.sourceKind === 'legacy_json' ? (
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-500">과거 기록</span>
+                  <span className="rounded bg-park-surface px-2 py-0.5 text-park-muted">과거 기록</span>
                 ) : null}
               </div>
 
-              <h3 className="mt-2 font-semibold text-slate-800">
+              <h3 className="mt-2 font-semibold text-park-ink">
                 {hit.pmsNo ? <span className="mr-2 text-park-navy">#{hit.pmsNo}</span> : null}
                 {hit.title}
               </h3>
-              <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-slate-600">
+              <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-park-ink">
                 {hit.snippet}
               </p>
             </li>

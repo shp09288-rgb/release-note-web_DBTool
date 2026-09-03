@@ -71,14 +71,14 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold text-slate-500">
+      <span className="mb-1 block text-xs font-semibold text-park-muted">
         {label}
         {required ? <span className="ml-0.5 text-red-600">*</span> : null}
       </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-park-navy ${
+        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-park-accent ${
           invalid ? 'border-red-400' : 'border-park-border'
         }`}
       />
@@ -168,7 +168,7 @@ export function UploadWizard() {
   if (!parsed || !draft) {
     return (
       <div className="rounded-2xl border border-dashed border-park-border bg-white p-12 text-center">
-        <p className="mb-4 text-slate-600">유관부서가 준 SW Update 적용 내역 HTML을 올려주세요.</p>
+        <p className="mb-4 text-park-ink">유관부서가 준 SW Update 적용 내역 HTML을 올려주세요.</p>
         <input
           type="file"
           accept=".html,.htm"
@@ -256,8 +256,8 @@ export function UploadWizard() {
         <div className="space-y-4">
           {draft.items.map((item, index) => (
             <div key={item.anchorId} className="rounded-xl border border-park-border p-4">
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="rounded bg-slate-100 px-2 py-0.5 font-semibold">{item.section}</span>
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-park-muted">
+                <span className="rounded bg-park-surface px-2 py-0.5 font-semibold">{item.section}</span>
                 {item.pmsNo ? (
                   <span>PMS #{item.pmsNo}</span>
                 ) : (
@@ -275,17 +275,17 @@ export function UploadWizard() {
               </div>
               <Field label="제목" value={item.title} onChange={(v) => patchItem(index, { title: v })} />
               <label className="mt-3 block">
-                <span className="mb-1 block text-xs font-semibold text-slate-500">현상</span>
+                <span className="mb-1 block text-xs font-semibold text-park-muted">현상</span>
                 <textarea
                   value={item.phenomenon}
                   onChange={(e) => patchItem(index, { phenomenon: e.target.value })}
                   rows={2}
-                  className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-navy"
+                  className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-accent"
                 />
               </label>
               {item.improvements.map((group, gi) => (
                 <label key={group.component} className="mt-3 block">
-                  <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  <span className="mb-1 block text-xs font-semibold uppercase text-park-muted">
                     개선 · {group.component} (줄바꿈으로 구분)
                   </span>
                   <textarea
@@ -297,7 +297,7 @@ export function UploadWizard() {
                       patchItem(index, { improvements });
                     }}
                     rows={Math.min(6, group.lines.length + 1)}
-                    className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-navy"
+                    className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-accent"
                   />
                 </label>
               ))}
@@ -309,12 +309,12 @@ export function UploadWizard() {
       <section className="rounded-2xl border border-park-border bg-white p-6">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex-1">
-            <span className="mb-1 block text-xs font-semibold text-slate-500">업로드 비밀번호</span>
+            <span className="mb-1 block text-xs font-semibold text-park-muted">업로드 비밀번호</span>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-navy"
+              className="w-full rounded-lg border border-park-border px-3 py-2 text-sm outline-none focus:border-park-accent"
             />
           </label>
           <button
