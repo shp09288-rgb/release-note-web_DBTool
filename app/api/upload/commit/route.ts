@@ -3,6 +3,8 @@ import { verifyDashboardPassword } from '@/lib/dashboard-password';
 import { insertDeployment } from '@/lib/queries/deployments';
 import type { DeploymentDraft } from '@/lib/queries/types';
 
+const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function POST(req: Request) {
   try {
     const { password, draft } = (await req.json()) as {
@@ -20,6 +22,13 @@ export async function POST(req: Request) {
     if (!draft?.site || !draft?.equipment) {
       return NextResponse.json(
         { ok: false, message: '사이트와 설비를 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    if (!draft?.deployedOn || !DATE_FORMAT_RE.test(draft.deployedOn)) {
+      return NextResponse.json(
+        { ok: false, message: '배포일을 YYYY-MM-DD 형식으로 입력해주세요.' },
         { status: 400 }
       );
     }
