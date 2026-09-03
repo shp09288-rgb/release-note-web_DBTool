@@ -82,3 +82,5 @@
 - **Supabase** — Postgres. RLS는 현재 비활성(Phase 1).
 - **Redmine** (`pms.parksystems.com`) — `GET /issues/{id}.json`.
   **선택적 의존이다.** 죽어도 조회 기능은 전부 동작한다. 캐시만 늙는다.
+  캐시 갱신은 `POST /api/pms/sync` (비밀번호 필요, UI 버튼 없음) — 트리거 방법은
+  `SETUP.md`의 "Refreshing the PMS issue cache" 참고.

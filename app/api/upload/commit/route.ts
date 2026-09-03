@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyDashboardPassword } from '@/lib/dashboard-password';
 import { insertDeployment } from '@/lib/queries/deployments';
+import { parseBuild } from '@/lib/version';
 import type { DeploymentDraft } from '@/lib/queries/types';
 
 const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -33,7 +34,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const deploymentId = await insertDeployment({ ...draft, sourceKind: 'html_upload' });
+    if (!Array.isArray(draft.items) || !Array.isArray(draft.alarms)) {
+      return NextResponse.json(
+        { ok: false, message: 'items/alarms 형식이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // *_raw 와 *_build 는 같은 값의 두 표현이다. 사람이 raw 를 고쳐도
+    // build 가 따라오도록, 클라이언트가 보낸 build 는 무시하고 여기서 다시 계산한다.
+    const xeaFrom = parseBuild(draft.xeaFromRaw ?? '');
+    const xeaTo = parseBuild(draft.xeaToRaw ?? '');
+    const xesFrom = parseBuild(draft.xesFromRaw ?? '');
+    const xesTo = parseBuild(draft.xesToRaw ?? '');
+
+    const recomputedDraft: DeploymentDraft = {
+      ...draft,
+      xeaFromBuild: xeaFrom.build,
+      xeaToBuild: xeaTo.build,
+      xesFromBuild: xesFrom.build,
+      xesToBuild: xesTo.build,
+    };
+
+    const deploymentId = await insertDeployment({ ...recomputedDraft, sourceKind: 'html_upload' });
     return NextResponse.json({ ok: true, deploymentId });
   } catch (err) {
     console.error('[upload/commit]', err);

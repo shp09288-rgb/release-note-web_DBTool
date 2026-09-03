@@ -40,6 +40,10 @@ export function findGaps(deployments: GapInput[]): TimelineGap[] {
 
       if (newerFrom == null || olderTo == null) continue;
       if (newerFrom === olderTo) continue;
+      // newer 의 from 이 older 의 to 보다 낮으면 방향이 뒤집힌 것이다 —
+      // 정렬이나 데이터가 우리 가정과 다르다는 뜻이므로, 모르는 것을
+      // 끊김으로 단정하지 않기 위해 건너뛴다.
+      if (newerFrom < olderTo) continue;
 
       gaps.push({
         component,

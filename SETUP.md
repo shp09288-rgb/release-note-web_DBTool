@@ -40,6 +40,25 @@ npm run dev
 
 Then open [http://localhost:3000/](http://localhost:3000/) and confirm the five equipment cards load with their current versions — that proves the Supabase connection works. Optionally open `/search` or a `/site/[site]/[equipment]` timeline to confirm further.
 
+## Refreshing the PMS issue cache
+
+`pms_issues` is a cache of Redmine issue metadata (title, status) keyed by PMS
+number. It is optional — lookups still work without it — but it goes stale as
+new deployments introduce PMS numbers that were never fetched. There is no UI
+button for this yet; trigger it with the upload password:
+
+```bash
+curl -X POST http://localhost:3000/api/pms/sync \
+  -H "Content-Type: application/json" \
+  -d '{"password": "<upload password>"}'
+```
+
+This calls `syncIssues()` (`lib/queries/pms.ts`), which re-fetches every PMS
+number referenced in `deployment_pms_refs` from `pms.parksystems.com` and
+upserts it into `pms_issues`. Run it after uploading a batch of deployments
+with new PMS numbers, or periodically via cron/scheduled task if you want it
+kept current automatically.
+
 ## Quick start
 
 ```bash

@@ -31,7 +31,10 @@ export async function listEquipment(): Promise<EquipmentSummary[]> {
   const { data, error } = await supabase
     .from('deployments')
     .select(`${DEPLOYMENT_COLUMNS}, deployment_items(flags)`)
-    .order('deployed_on', { ascending: false });
+    .order('deployed_on', { ascending: false })
+    .order('xea_to_build', { ascending: false, nullsFirst: false })
+    .order('xes_to_build', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false });
 
   if (error) throw new Error(error.message);
 
@@ -45,7 +48,8 @@ export async function listEquipment(): Promise<EquipmentSummary[]> {
 
     const existing = byKey.get(key);
     if (!existing) {
-      // 정렬이 최신순이므로 처음 만나는 행이 최신 배포다.
+      // deployed_on 이 같은 행이 흔하므로 xea_to_build, xes_to_build, id 순으로
+      // 전순서(total order)를 만든다. 이 정렬 덕분에 처음 만나는 행이 항상 최신 배포다.
       byKey.set(key, {
         site: row.site,
         equipment: row.equipment,
@@ -76,7 +80,10 @@ export async function getTimeline(
     .select(`${DEPLOYMENT_COLUMNS}, deployment_items(*)`)
     .eq('site', site)
     .eq('equipment', equipment)
-    .order('deployed_on', { ascending: false });
+    .order('deployed_on', { ascending: false })
+    .order('xea_to_build', { ascending: false, nullsFirst: false })
+    .order('xes_to_build', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false });
 
   if (error) throw new Error(error.message);
 
@@ -169,7 +176,8 @@ export async function searchItems(query: string): Promise<SearchHit[]> {
     if (!ids.length) return hits;
     depQuery = depQuery.in('id', ids);
   } else {
-    depQuery = depQuery.ilike('body_text', `%${term}%`);
+    const escapedTerm = term.replace(/[\\%_]/g, (c) => `\\${c}`);
+    depQuery = depQuery.ilike('body_text', `%${escapedTerm}%`);
   }
 
   const { data: depRows, error: depError } = await depQuery;

@@ -31,7 +31,8 @@ export default async function DeploymentPage({
       </header>
 
       {deployment.raw_html ? (
-        // 사내 유관부서가 만든 문서를 그대로 렌더한다. 외부 입력이 아니다.
+        // /upload 를 거쳐 저장된 값이라 신뢰할 수 있는 입력이 아니다.
+        // sandbox="" 로 스크립트 실행·폼 제출·top-navigation 등 모든 권한을 차단한다.
         <iframe
           srcDoc={deployment.raw_html}
           title="배포 문서 원문"

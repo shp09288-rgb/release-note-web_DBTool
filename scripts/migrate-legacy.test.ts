@@ -11,7 +11,7 @@ import {
 const DATA_DIR = path.resolve(__dirname, '../data');
 
 describe('loadLegacyFiles', () => {
-  it('공백 파일명 중복(LGD AP4)을 제외하고 5개 설비를 읽는다', () => {
+  it('data/ 의 5개 설비 파일을 읽는다 (중복 파일은 트리에서 이미 제거됨)', () => {
     const files = loadLegacyFiles(DATA_DIR);
     expect(files).toHaveLength(5);
     expect(files.some((f) => f.fileName.includes('LGD AP4'))).toBe(false);

@@ -49,7 +49,6 @@ export type MigrationReport = {
 export function loadLegacyFiles(dir: string): LegacyFile[] {
   return readdirSync(dir)
     .filter((name) => name.endsWith('.json'))
-    .filter((name) => !name.includes(' ')) // 공백 파일명 중복 제외
     .map((fileName) => {
       const raw = JSON.parse(readFileSync(path.join(dir, fileName), 'utf-8'));
       return {

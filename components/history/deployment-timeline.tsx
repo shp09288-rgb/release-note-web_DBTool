@@ -43,6 +43,7 @@ export function DeploymentTimeline({
       {deployments.map((dep) => {
         const isOpen = open === dep.id;
         const isLegacy = dep.source_kind === 'legacy_json';
+        const hasItems = dep.items.length > 0;
         const gapsAfter = gaps.filter((g) => g.newerId === dep.id);
 
         return (
@@ -78,13 +79,13 @@ export function DeploymentTimeline({
                   </div>
                 </div>
                 <span className="text-sm text-slate-500">
-                  {isLegacy ? '요약만' : `${dep.items.length}개 항목`}
+                  {hasItems ? `${dep.items.length}개 항목` : '요약만'}
                 </span>
               </button>
 
               {isOpen ? (
                 <div className="px-5 pb-5">
-                  {isLegacy ? (
+                  {!hasItems ? (
                     <p className="whitespace-pre-line border-t border-park-border pt-4 text-sm text-slate-600">
                       {dep.body_text || '내용 없음'}
                     </p>

@@ -39,4 +39,9 @@ describe('findGaps', () => {
   it('배포가 1건이면 끊김이 없다', () => {
     expect(findGaps([dep('a', 3500, 3600)])).toHaveLength(0);
   });
+
+  it('newer 의 from 이 older 의 to 보다 낮으면(방향 역전) 끊김을 단정하지 않는다', () => {
+    // 정렬이나 데이터가 가정과 다르다는 신호이므로 건너뛴다.
+    expect(findGaps([dep('b', 3500, 3600), dep('a', 3600, 3700)])).toHaveLength(0);
+  });
 });
