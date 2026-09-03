@@ -38,7 +38,7 @@ Environment variables are read when Next.js starts. After changing `.env.local`:
 npm run dev
 ```
 
-Then open [http://localhost:3000/dashboard](http://localhost:3000/dashboard) and confirm the equipment list loads without `/api/list-notes` errors.
+Then open [http://localhost:3000/](http://localhost:3000/) and confirm the five equipment cards load with their current versions — that proves the Supabase connection works. Optionally open `/search` or a `/site/[site]/[equipment]` timeline to confirm further.
 
 ## Quick start
 

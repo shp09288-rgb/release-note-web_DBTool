@@ -1,7 +1,6 @@
 # 아키텍처
 
-> 상태: **전환 설계 완료, 구현 전.** 아래는 목표 구조다.
-> 현재 코드는 아직 릴리즈 노트 작성 도구다. 차이는 「현재와의 차이」 절 참조.
+> 상태: **전환 완료.** 아래는 현재 구조다.
 
 ## 한 줄
 
@@ -83,17 +82,3 @@
 - **Supabase** — Postgres. RLS는 현재 비활성(Phase 1).
 - **Redmine** (`pms.parksystems.com`) — `GET /issues/{id}.json`.
   **선택적 의존이다.** 죽어도 조회 기능은 전부 동작한다. 캐시만 늙는다.
-
-## 현재와의 차이
-
-지금 코드에는 아래가 남아 있고, 전환 시 제거한다 (spec 6장):
-
-- `app/editor/**`, `components/editor/**` — 노트 편집기
-- `app/api/*-note/`, `generate-docx`, `test-save` — 작성 API
-- `app/api/*-lock/`, `lib/lock-utils.ts` — 동시편집 락
-- DB: `notes` · `overview_items` · `detail_rows` · `note_items` ·
-  `history_rows` · `edit_locks`, RPC `save_note` · `acquire_lock` · `release_lock`
-- 루트 유령 파일과 `- 복사본` 중복 파일들
-
-**남기는 것**: `dashboard_settings`(업로드 비밀번호), `components/dashboard/`
-카드·툴바·토스트, Park Systems 스타일, Supabase 배선.
