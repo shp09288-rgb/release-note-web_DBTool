@@ -21,6 +21,14 @@ export type PmsIssue = {
 const SITE = /(?<![A-Za-z0-9-])([A-Z]{2,4}\s[A-Z]{1,2}\d{1,2})(?!\d)/;
 
 /**
+ * Maximum time to wait for a Redmine API response. Set conservatively to catch
+ * hanging connections (VPN drops, server stalls) before the OS-level TCP timeout.
+ * This is an internal server on a fast network; 15s is generous but ensures
+ * slow networks or transient load don't trigger false timeouts.
+ */
+const FETCH_TIMEOUT_MS = 15_000;
+
+/**
  * Redmine 제목에서 이슈가 발생한 사이트를 뽑는다.
  *
  * '#4552' 는 SDC A5 배포 문서의 항목이지만 제목은 '[SDC A3] ...' 이다.
@@ -64,6 +72,7 @@ export async function fetchIssue(
   try {
     const res = await doFetch(`${base}/issues/${id}.json`, {
       headers: key ? { 'X-Redmine-API-Key': key } : {},
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!res.ok) return null;

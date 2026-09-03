@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+﻿import { describe, it, expect, vi } from 'vitest';
 import { parseOriginSite, pickCustomField, fetchIssue } from '@/lib/pms/redmine';
 
 describe('parseOriginSite', () => {
@@ -85,6 +85,13 @@ describe('fetchIssue', () => {
 
   it('네트워크 오류에도 예외를 던지지 않는다', async () => {
     const fakeFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+    expect(await fetchIssue(4952, { fetch: fakeFetch as any })).toBeNull();
+  });
+
+  it('타임아웃 (AbortError) 에도 예외를 던지지 않는다', async () => {
+    const abortError = new Error('AbortError') as any;
+    abortError.name = 'AbortError';
+    const fakeFetch = vi.fn().mockRejectedValue(abortError);
     expect(await fetchIssue(4952, { fetch: fakeFetch as any })).toBeNull();
   });
 });
